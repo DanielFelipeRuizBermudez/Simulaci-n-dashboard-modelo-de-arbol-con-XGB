@@ -158,23 +158,26 @@ TR = {
               "Ej. \"¿Quiénes están predichos para entrar en mora?\" o "
               "\"How many clients are flagged for churn?\"",
     },
-    "sol_sidebar_header": {"en": "### Sol (Gemini API)", "es": "### Sol (API de Gemini)"},
+    "sol_sidebar_header": {"en": "### Sol", "es": "### Sol"},
     "sol_key_loaded": {
-        "en": "Gemini API key loaded from app secrets.",
-        "es": "API key de Gemini cargada desde los secretos de la app.",
+        "en": "Connection key loaded from app secrets.",
+        "es": "Clave de conexión cargada desde los secretos de la app.",
     },
-    "sol_key_input_label": {"en": "Gemini API key", "es": "API key de Gemini"},
+    "sol_key_input_label": {"en": "API key", "es": "API key"},
     "sol_key_help": {
-        "en": "Get one for free at aistudio.google.com. Paste it here, it's not saved anywhere.",
-        "es": "Consigue una gratis en aistudio.google.com. Pégala aquí, no se guarda en ningún lado.",
+        "en": "Paste it here to activate Sol. It's not saved anywhere.",
+        "es": "Pégala aquí para activar a Sol. No se guarda en ningún lado.",
     },
+    "sol_model_label": {"en": "Response speed", "es": "Velocidad de respuesta"},
+    "sol_model_fast": {"en": "Fast (recommended)", "es": "Rápido (recomendado)"},
+    "sol_model_standard": {"en": "Standard", "es": "Estándar"},
     "sol_model_help": {
-        "en": "Flash models are the cheapest option, ideal for this demo.",
-        "es": "Los modelos Flash son la opción más económica, ideal para este demo.",
+        "en": "The fast tier is the cheapest option, ideal for this demo.",
+        "es": "El nivel rápido es la opción más económica, ideal para este demo.",
     },
     "sol_paste_key_info": {
-        "en": "Paste your Gemini API key in the sidebar to activate Sol.",
-        "es": "Pega tu API key de Gemini en la barra lateral para activar a Sol.",
+        "en": "Paste your API key in the sidebar to activate Sol.",
+        "es": "Pega tu API key en la barra lateral para activar a Sol.",
     },
     "sol_missing_dep": {
         "en": "Missing dependency: run `pip install google-genai` and restart the app.",
@@ -601,10 +604,14 @@ def render_sol_chat():
                 t("sol_key_input_label"), value="", type="password",
                 help=t("sol_key_help"),
             )
-        model_choice = st.selectbox(
-            "Model", ["gemini-flash-latest", "gemini-3.6-flash"], index=0,
+        model_ids = ["gemini-flash-latest", "gemini-3.6-flash"]
+        model_labels = [t("sol_model_fast"), t("sol_model_standard")]
+        model_idx = st.selectbox(
+            t("sol_model_label"), range(len(model_ids)),
+            format_func=lambda i: model_labels[i], index=0,
             help=t("sol_model_help"),
         )
+        model_choice = model_ids[model_idx]
 
     if not api_key_input:
         st.info(t("sol_paste_key_info"))
