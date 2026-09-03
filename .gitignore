@@ -1,10 +1,11 @@
 # Byte-compiled / cache files
 __pycache__/
 *.py[cod]
+*.pyc
 *$py.class
 
 # Streamlit secrets
-.streamlit/secrets.toml
+**/.streamlit/secrets.toml
 
 # Virtual environments
 venv/
@@ -24,3 +25,12 @@ dist/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Trained model artifacts (regenerate with generate_data.py + train_models.py)
+streamlit_demo/models/
+
+# Claude Code local session state
+.claude/
+
+# Logs
+*.log

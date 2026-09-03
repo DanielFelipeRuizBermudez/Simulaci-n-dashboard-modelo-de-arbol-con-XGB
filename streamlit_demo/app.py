@@ -14,7 +14,9 @@ import json
 import os
 
 import joblib
+import matplotlib.pyplot as plt
 import pandas as pd
+import plotly.graph_objects as go
 import shap
 import streamlit as st
 
@@ -26,8 +28,9 @@ NEW_CLIENTS_TEMPLATE = os.path.join(DATA_DIR, "new_clients_template.csv")
 
 BRAND_GREEN = "#00FCA9"
 BRAND_DARK = "#272727"
+ALERT_RED = "#E4572E"
 
-st.set_page_config(page_title="FinBank Predictive Analytics", layout="wide", page_icon="📊")
+st.set_page_config(page_title="FinBank Predictive Analytics", layout="wide")
 
 st.markdown(
     f"""
@@ -40,6 +43,183 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
+
+# ---------- i18n ----------
+#
+# The UI (labels, buttons, headers) is translated via TR below and the t()
+# helper. Sol's chat is a separate matter: it already detects the language
+# of each question and replies in kind (see SOL_SYSTEM_PROMPT), regardless
+# of the UI language chosen here.
+
+TR = {
+    "app_title": {
+        "en": "FinBank Predictive Analytics — Live Demo",
+        "es": "FinBank Analítica Predictiva — Demo en Vivo",
+    },
+    "app_subtitle": {
+        "en": "FinTech Solutions · Explainable XGBoost models for early delinquency and churn detection",
+        "es": "FinTech Solutions · Modelos XGBoost explicables para detección temprana de morosidad y deserción de clientes",
+    },
+    "tab_delinquency": {"en": "Delinquency", "es": "Morosidad"},
+    "tab_churn": {"en": "Churn", "es": "Deserción"},
+    "tab_sol": {"en": "Ask Sol", "es": "Pregúntale a Sol"},
+    "delinquency_title": {"en": "Early Delinquency Detection", "es": "Detección Temprana de Morosidad"},
+    "churn_title": {"en": "Churn Risk Detection", "es": "Detección de Riesgo de Deserción"},
+    "model_not_found": {
+        "en": "Model not found. Run `python train_models.py` first (after `python generate_data.py`).",
+        "es": "Modelo no encontrado. Corre `python train_models.py` primero (después de `python generate_data.py`).",
+    },
+    "about_model": {"en": "About this model", "es": "Sobre este modelo"},
+    "about_model_body": {
+        "en": (
+            "Trained by FinTech Solutions on FinBank's historical customer base "
+            "(same base used for both models — this one just uses `{target}` "
+            "as its response variable, predicting the event within "
+            "**{horizon}**). Validation {metric_name}: **{metric_value}**, "
+            "with hyperparameters and decision threshold both tuned to optimize "
+            "{metric_name}, not accuracy. Best hyperparameters found via grid "
+            "search: `{best_params}`.\n\n"
+            "Below, upload a file with **new clients** to score them instantly."
+        ),
+        "es": (
+            "Entrenado por FinTech Solutions con la base histórica de clientes de "
+            "FinBank (la misma base usada para ambos modelos — este solo usa "
+            "`{target}` como variable de respuesta, prediciendo el evento dentro "
+            "de **{horizon}**). {metric_name} de validación: **{metric_value}**, "
+            "con hiperparámetros y umbral de decisión ajustados para optimizar "
+            "{metric_name}, no precisión (accuracy). Mejores hiperparámetros "
+            "encontrados vía grid search: `{best_params}`.\n\n"
+            "Abajo, sube un archivo con **nuevos clientes** para calificarlos al instante."
+        ),
+    },
+    "download_sample": {
+        "en": "Download sample 'new clients' file (works for both tabs)",
+        "es": "Descargar archivo de ejemplo de 'nuevos clientes' (sirve para ambas pestañas)",
+    },
+    "upload_label": {"en": "Upload new client data ({label})", "es": "Subir datos de nuevos clientes ({label})"},
+    "missing_columns": {
+        "en": "The uploaded file is missing required columns: {missing}",
+        "es": "Al archivo subido le faltan columnas requeridas: {missing}",
+    },
+    "clear_data": {"en": "Remove data", "es": "Quitar datos"},
+    "reset_sample": {"en": "Restore sample", "es": "Restaurar ejemplo"},
+    "no_data_loaded": {
+        "en": "No data loaded. Upload a file or restore the sample to see results.",
+        "es": "No hay datos cargados. Sube un archivo o restaura el ejemplo para ver resultados.",
+    },
+    "key_indicators": {"en": "### Key indicators", "es": "### Indicadores clave"},
+    "clients_evaluated": {"en": "Clients evaluated", "es": "Clientes evaluados"},
+    "flagged_high_risk": {"en": "Flagged as high {label} risk", "es": "Marcados como alto riesgo de {label}"},
+    "avg_risk_score": {"en": "Average risk score", "es": "Puntaje de riesgo promedio"},
+    "exposure_at_risk": {"en": "Exposure at risk (COP)", "es": "Exposición en riesgo (COP)"},
+    "client_value_at_risk": {"en": "Client value at risk", "es": "Valor de cliente en riesgo"},
+    "prioritized_list": {"en": "### Prioritized client list", "es": "### Lista priorizada de clientes"},
+    "risk_distribution": {"en": "### Risk score distribution", "es": "### Distribución del puntaje de riesgo"},
+    "global_shap_header": {
+        "en": "### What drives this model overall? (global SHAP)",
+        "es": "### ¿Qué impulsa este modelo en general? (SHAP global)",
+    },
+    "global_shap_caption": {
+        "en": "Average influence of each variable across all {n} uploaded clients "
+              "on being classified as high {label} risk (class 1).",
+        "es": "Influencia promedio de cada variable, entre los {n} clientes cargados, "
+              "en ser clasificado como alto riesgo de {label} (clase 1).",
+    },
+    "overall_importance": {
+        "en": "**Overall importance** (bigger = more influence, either direction)",
+        "es": "**Importancia general** (más grande = más influencia, en cualquier dirección)",
+    },
+    "direction_header": {
+        "en": "**Direction** (positive = pushes risk up, negative = pushes it down)",
+        "es": "**Dirección** (positivo = sube el riesgo, negativo = lo baja)",
+    },
+    "local_shap_header": {
+        "en": "### Why was one specific client flagged? (local SHAP)",
+        "es": "### ¿Por qué se marcó a un cliente específico? (SHAP local)",
+    },
+    "select_client": {"en": "Select a client", "es": "Selecciona un cliente"},
+    "client_risk_caption": {
+        "en": "Risk score for {client}: **{score}** ({status}). "
+              "Bars to the right push the score up, bars to the left push it down.",
+        "es": "Puntaje de riesgo para {client}: **{score}** ({status}). "
+              "Las barras a la derecha suben el puntaje, las de la izquierda lo bajan.",
+    },
+    "flagged_status": {"en": "flagged", "es": "marcado"},
+    "not_flagged_status": {"en": "not flagged", "es": "no marcado"},
+    "sol_subheader": {"en": "Ask Sol", "es": "Pregúntale a Sol"},
+    "sol_caption": {
+        "en": "Text version of Sol for this demo (the real product uses voice calls). "
+              "Works in English or Spanish — Sol replies in whichever language you use. "
+              "E.g. \"How many clients are flagged for churn?\" or "
+              "\"¿Quiénes están predichos para entrar en mora?\"",
+        "es": "Versión en texto de Sol para este demo (el producto real usa llamadas de voz). "
+              "Funciona en inglés o español — Sol responde en el idioma que uses. "
+              "Ej. \"¿Quiénes están predichos para entrar en mora?\" o "
+              "\"How many clients are flagged for churn?\"",
+    },
+    "sol_sidebar_header": {"en": "### Sol (Gemini API)", "es": "### Sol (API de Gemini)"},
+    "sol_key_loaded": {
+        "en": "Gemini API key loaded from app secrets.",
+        "es": "API key de Gemini cargada desde los secretos de la app.",
+    },
+    "sol_key_input_label": {"en": "Gemini API key", "es": "API key de Gemini"},
+    "sol_key_help": {
+        "en": "Get one for free at aistudio.google.com. Paste it here, it's not saved anywhere.",
+        "es": "Consigue una gratis en aistudio.google.com. Pégala aquí, no se guarda en ningún lado.",
+    },
+    "sol_model_help": {
+        "en": "Flash models are the cheapest option, ideal for this demo.",
+        "es": "Los modelos Flash son la opción más económica, ideal para este demo.",
+    },
+    "sol_paste_key_info": {
+        "en": "Paste your Gemini API key in the sidebar to activate Sol.",
+        "es": "Pega tu API key de Gemini en la barra lateral para activar a Sol.",
+    },
+    "sol_missing_dep": {
+        "en": "Missing dependency: run `pip install google-genai` and restart the app.",
+        "es": "Falta una dependencia: corre `pip install google-genai` y reinicia la app.",
+    },
+    "sol_chat_placeholder": {
+        "en": "Ask Sol about the results...",
+        "es": "Pregúntale a Sol sobre los resultados...",
+    },
+    "sol_error": {"en": "Sol couldn't respond: {error}", "es": "Sol no pudo responder: {error}"},
+    "footer_note": {
+        "en": "Note: this demo uses synthetic data representative of a banking portfolio, "
+              "built to showcase how the final product would work — not FinBank's real client data.",
+        "es": "Nota: este demo usa datos sintéticos representativos de un portafolio bancario, "
+              "creado para mostrar cómo funcionaría el producto final — no son datos reales de clientes de FinBank.",
+    },
+    "lang_selector_label": {"en": "Language", "es": "Idioma"},
+}
+
+LABEL_WORDS = {
+    "delinquency": {"en": "delinquency", "es": "morosidad"},
+    "churn": {"en": "churn", "es": "deserción"},
+}
+
+
+def get_lang():
+    return st.session_state.get("lang", "es")
+
+
+def t(key, **kwargs):
+    text = TR[key][get_lang()]
+    return text.format(**kwargs) if kwargs else text
+
+
+def label_word(model_name):
+    return LABEL_WORDS[model_name][get_lang()]
+
+
+with st.sidebar:
+    lang_choice = st.selectbox(
+        "Idioma / Language", ["Español", "English"],
+        index=0 if get_lang() == "es" else 1,
+    )
+    st.session_state["lang"] = "es" if lang_choice == "Español" else "en"
+    st.divider()
 
 
 # ---------- prediction helpers ----------
@@ -62,6 +242,34 @@ def score_new_clients(df, model, meta):
     return out.sort_values("risk_score", ascending=False)
 
 
+def risk_donut(label, flagged, total, pct_flagged):
+    fig = go.Figure(
+        data=[
+            go.Pie(
+                labels=["Not flagged", "Flagged"],
+                values=[total - flagged, flagged],
+                hole=0.6,
+                sort=False,
+                textinfo="none",
+                marker=dict(colors=[BRAND_GREEN, ALERT_RED]),
+                hoverinfo="label+percent+value",
+            )
+        ]
+    )
+    fig.add_annotation(
+        text=f"{pct_flagged:.0f}%",
+        x=0.5, y=0.5, showarrow=False,
+        font=dict(size=28, color=ALERT_RED),
+    )
+    fig.update_layout(
+        title=dict(text=f"{label.capitalize()} risk", font=dict(size=14)),
+        showlegend=False,
+        margin=dict(l=10, r=10, t=40, b=10),
+        width=220, height=220,
+    )
+    return fig
+
+
 def kpi_row(scored_df, meta, label):
     total = len(scored_df)
     flagged = int(scored_df["flagged"].sum())
@@ -74,13 +282,16 @@ def kpi_row(scored_df, meta, label):
         exposure_flagged = scored_df.loc[scored_df["flagged"], amount_col].sum()
         exposure_txt = f"{exposure_flagged:,.0f}"
 
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Clients evaluated", f"{total}")
-    c2.metric(f"Flagged as high {label} risk", f"{flagged}", f"{pct_flagged:.1f}%")
-    c3.metric("Average risk score", f"{avg_risk:.1f}%")
+    c1, c2, c3, c4, c5 = st.columns([1, 1, 1, 1, 1.2])
+    c1.metric(t("clients_evaluated"), f"{total}")
+    c2.metric(t("flagged_high_risk", label=label_word(label)), f"{flagged}", f"{pct_flagged:.1f}%")
+    c3.metric(t("avg_risk_score"), f"{avg_risk:.1f}%")
     if exposure_txt:
-        metric_label = "Exposure at risk (COP)" if label == "delinquency" else "Client value at risk"
+        metric_label = t("exposure_at_risk") if label == "delinquency" else t("client_value_at_risk")
         c4.metric(metric_label, exposure_txt)
+
+    with c5:
+        st.plotly_chart(risk_donut(label, flagged, total, pct_flagged), use_container_width=False)
 
 
 def compute_batch_shap(model, explainer, meta, scored_df):
@@ -101,47 +312,67 @@ def render_tab(label, model_name, title):
     st.subheader(title)
 
     if not os.path.exists(os.path.join(MODEL_DIR, f"{model_name}_model.pkl")):
-        st.warning(
-            "Model not found. Run `python train_models.py` first "
-            "(after `python generate_data.py`)."
-        )
+        st.warning(t("model_not_found"))
         return
 
     model, meta, explainer = load_model_bundle(model_name)
 
-    with st.expander("ℹ️ About this model", expanded=False):
+    with st.expander(t("about_model"), expanded=False):
         metric_name = "F2-score" if model_name == "delinquency" else "F1-score"
         metric_value = meta.get("f2_score", meta.get("f1_score"))
         st.markdown(
-            f"""
-            Trained by FinTech Solutions on FinBank's historical customer base
-            (same base used for both models — this one just uses `{meta['target']}`
-            as its response variable, predicting the event within
-            **{meta.get('horizon', 'N/A')}**). Validation {metric_name}: **{metric_value}**,
-            with hyperparameters and decision threshold both tuned to optimize
-            {metric_name}, not accuracy. Best hyperparameters found via grid
-            search: `{meta.get('best_params')}`.
-
-            Below, upload a file with **new clients** to score them instantly.
-            """
+            t(
+                "about_model_body",
+                target=meta["target"],
+                horizon=meta.get("horizon", "N/A"),
+                metric_name=metric_name,
+                metric_value=metric_value,
+                best_params=meta.get("best_params"),
+            )
         )
 
     if os.path.exists(NEW_CLIENTS_TEMPLATE):
         with open(NEW_CLIENTS_TEMPLATE, "rb") as f:
             st.download_button(
-                "⬇️ Download sample 'new clients' file (works for both tabs)",
+                t("download_sample"),
                 f, file_name="new_clients_template.csv", mime="text/csv",
                 key=f"dl_{model_name}",
             )
 
-    uploaded = st.file_uploader(f"Upload new client data ({label})", type="csv", key=model_name)
-    if uploaded is None:
-        return
+    df_key = f"df_{model_name}"
+    if df_key not in st.session_state:
+        st.session_state[df_key] = (
+            pd.read_csv(NEW_CLIENTS_TEMPLATE) if os.path.exists(NEW_CLIENTS_TEMPLATE) else None
+        )
 
-    df = pd.read_csv(uploaded)
-    missing = [c for c in meta["features"] if c not in df.columns]
-    if missing:
-        st.error(f"The uploaded file is missing required columns: {missing}")
+    uploaded = st.file_uploader(t("upload_label", label=label_word(label)), type="csv", key=model_name)
+
+    # file_uploader keeps returning the same file across reruns until the
+    # user picks a new one or clears it — only (re)process it once per
+    # actual upload, so it doesn't stomp on the buttons below.
+    last_upload_key = f"_last_upload_id_{model_name}"
+    if uploaded is not None and st.session_state.get(last_upload_key) != uploaded.file_id:
+        st.session_state[last_upload_key] = uploaded.file_id
+        new_df = pd.read_csv(uploaded)
+        missing = [c for c in meta["features"] if c not in new_df.columns]
+        if missing:
+            st.error(t("missing_columns", missing=missing))
+            return
+        st.session_state[df_key] = new_df
+
+    col_clear, col_reset = st.columns(2)
+    with col_clear:
+        if st.button(t("clear_data"), key=f"clear_{model_name}"):
+            st.session_state[df_key] = None
+    with col_reset:
+        if st.button(t("reset_sample"), key=f"reset_{model_name}"):
+            st.session_state[df_key] = (
+                pd.read_csv(NEW_CLIENTS_TEMPLATE) if os.path.exists(NEW_CLIENTS_TEMPLATE) else None
+            )
+
+    df = st.session_state.get(df_key)
+    if df is None:
+        st.info(t("no_data_loaded"))
         return
 
     scored = score_new_clients(df, model, meta)
@@ -151,42 +382,43 @@ def render_tab(label, model_name, title):
     st.session_state[f"meta_{model_name}"] = meta
     st.session_state[f"shap_{model_name}"] = shap_df  # same, indexed like `scored`
 
-    st.markdown("### 📈 Key indicators")
+    st.markdown(t("key_indicators"))
     kpi_row(scored, meta, label)
 
-    st.markdown("### 🚩 Prioritized client list")
+    st.markdown(t("prioritized_list"))
     display_cols = ["client_id", "risk_score", "flagged"] + meta["features"]
     st.dataframe(
         scored[display_cols].style.format({"risk_score": "{:.1%}"}),
         use_container_width=True, height=300,
     )
 
-    st.markdown("### 📊 Risk score distribution")
+    st.markdown(t("risk_distribution"))
     st.bar_chart(scored.set_index("client_id")["risk_score"])
 
-    st.markdown("### 🧠 What drives this model overall? (global SHAP)")
-    st.caption(
-        f"Average influence of each variable across all {len(scored)} uploaded clients "
-        f"on being classified as high {label} risk (class 1)."
+    st.markdown(t("global_shap_header"))
+    st.caption(t("global_shap_caption", n=len(scored), label=label_word(label)))
+    fig = plt.figure()
+    shap.summary_plot(
+        shap_df.values,
+        scored[meta["features"]],
+        plot_type="dot",
+        max_display=10,
+        show=False,
     )
-    col_a, col_b = st.columns(2)
-    with col_a:
-        st.markdown("**Overall importance** (bigger = more influence, either direction)")
-        st.bar_chart(shap_df.abs().mean().sort_values(ascending=False))
-    with col_b:
-        st.markdown("**Direction** (positive = pushes risk up, negative = pushes it down)")
-        st.bar_chart(shap_df.mean().sort_values())
+    plt.title(f"SHAP - {label.capitalize()}: Class 1")
+    plt.tight_layout()
+    st.pyplot(fig)
+    plt.close(fig)
 
-    st.markdown("### 🔍 Why was one specific client flagged? (local SHAP)")
+    st.markdown(t("local_shap_header"))
     client_options = scored["client_id"].tolist()
-    selected_client = st.selectbox("Select a client", client_options, key=f"select_{model_name}")
+    selected_client = st.selectbox(t("select_client"), client_options, key=f"select_{model_name}")
     row = scored[scored["client_id"] == selected_client].iloc[0]
     contrib = shap_explanation_from_cache(shap_df, row.name)
 
+    status = t("flagged_status") if row["flagged"] else t("not_flagged_status")
     st.caption(
-        f"Risk score for {selected_client}: **{row['risk_score']:.1%}** "
-        f"({'flagged' if row['flagged'] else 'not flagged'}). "
-        "Bars to the right push the score up, bars to the left push it down."
+        t("client_risk_caption", client=selected_client, score=f"{row['risk_score']:.1%}", status=status)
     )
     st.bar_chart(contrib)
 
@@ -346,36 +578,43 @@ predictions yet, tell the stakeholder (in their language) to upload a
 client file in the Delinquency or Churn tab first."""
 
 
-def render_sol_chat():
-    st.subheader("💬 Ask Sol")
-    st.caption(
-        "Text version of Sol for this demo (the real product uses voice calls). "
-        "Works in English or Spanish — Sol replies in whichever language you use. "
-        "E.g. \"How many clients are flagged for churn?\" or "
-        "\"¿Quiénes están predichos para entrar en mora?\""
-    )
+def _get_gemini_api_key():
+    try:
+        key = st.secrets.get("GEMINI_API_KEY", "")
+    except Exception:
+        key = ""
+    return key or os.environ.get("GEMINI_API_KEY", "")
 
-    api_key_env = os.environ.get("GEMINI_API_KEY", "")
+
+def render_sol_chat():
+    st.subheader(t("sol_subheader"))
+    st.caption(t("sol_caption"))
+
+    configured_key = _get_gemini_api_key()
     with st.sidebar:
-        st.markdown("### Sol (Gemini API)")
-        api_key_input = st.text_input(
-            "Gemini API key", value=api_key_env, type="password",
-            help="Get one for free at aistudio.google.com. Paste it here, it's not saved anywhere.",
-        )
+        st.markdown(t("sol_sidebar_header"))
+        if configured_key:
+            api_key_input = configured_key
+            st.caption(t("sol_key_loaded"))
+        else:
+            api_key_input = st.text_input(
+                t("sol_key_input_label"), value="", type="password",
+                help=t("sol_key_help"),
+            )
         model_choice = st.selectbox(
-            "Model", ["gemini-2.5-flash", "gemini-2.0-flash"], index=0,
-            help="Flash models are the cheapest option, ideal for this demo.",
+            "Model", ["gemini-flash-latest", "gemini-3.6-flash"], index=0,
+            help=t("sol_model_help"),
         )
 
     if not api_key_input:
-        st.info("Paste your Gemini API key in the sidebar to activate Sol.")
+        st.info(t("sol_paste_key_info"))
         return
 
     try:
         from google import genai
         from google.genai import types
     except ImportError:
-        st.error("Missing dependency: run `pip install google-genai` and restart the app.")
+        st.error(t("sol_missing_dep"))
         return
 
     if "sol_chat" not in st.session_state or st.session_state.get("sol_model") != model_choice:
@@ -384,6 +623,7 @@ def render_sol_chat():
             system_instruction=SOL_SYSTEM_PROMPT,
             tools=[get_kpis, get_client_list, get_shap_summary, get_feature_contribution],
         )
+        st.session_state["sol_client"] = client
         st.session_state["sol_chat"] = client.chats.create(model=model_choice, config=config)
         st.session_state["sol_model"] = model_choice
         st.session_state["sol_history"] = []
@@ -392,7 +632,7 @@ def render_sol_chat():
         with st.chat_message(msg["role"]):
             st.write(msg["content"])
 
-    user_msg = st.chat_input("Ask Sol about the results...")
+    user_msg = st.chat_input(t("sol_chat_placeholder"))
     if user_msg:
         st.session_state["sol_history"].append({"role": "user", "content": user_msg})
         with st.chat_message("user"):
@@ -404,33 +644,28 @@ def render_sol_chat():
                 st.write(response.text)
                 st.session_state["sol_history"].append({"role": "assistant", "content": response.text})
             except Exception as e:
-                st.error(f"Sol couldn't respond: {e}")
+                st.error(t("sol_error", error=e))
 
 
 # ---------- layout ----------
 
 logo_path = os.path.join(ASSETS_DIR, "logo.jpg")
 if os.path.exists(logo_path):
-    st.image(logo_path, width=260)
+    st.image(logo_path, width=550)
 
-st.title("📊 FinBank Predictive Analytics — Live Demo")
-st.caption(
-    "FinTech Solutions · Explainable XGBoost models for early delinquency and churn detection"
-)
+st.title(t("app_title"))
+st.caption(t("app_subtitle"))
 
-tab1, tab2, tab3 = st.tabs(["🔴 Delinquency", "🟢 Churn", "💬 Ask Sol"])
+tab1, tab2, tab3 = st.tabs([t("tab_delinquency"), t("tab_churn"), t("tab_sol")])
 
 with tab1:
-    render_tab("delinquency", "delinquency", "Early Delinquency Detection")
+    render_tab("delinquency", "delinquency", t("delinquency_title"))
 
 with tab2:
-    render_tab("churn", "churn", "Churn Risk Detection")
+    render_tab("churn", "churn", t("churn_title"))
 
 with tab3:
     render_sol_chat()
 
 st.divider()
-st.caption(
-    "Note: this demo uses synthetic data representative of a banking portfolio, "
-    "built to showcase how the final product would work — not FinBank's real client data."
-)
+st.caption(t("footer_note"))
