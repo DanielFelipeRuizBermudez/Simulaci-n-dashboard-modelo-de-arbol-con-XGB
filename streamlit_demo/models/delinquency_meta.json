@@ -1,0 +1,21 @@
+{
+  "features": [
+    "monthly_income_cop",
+    "credit_exposure_cop",
+    "avg_days_late_last_year",
+    "num_active_products",
+    "credit_utilization",
+    "months_with_bank"
+  ],
+  "target": "defaulted_30_60_days",
+  "horizon": "30/60 days",
+  "threshold": 0.3322381377220154,
+  "f2_score": 0.5376,
+  "best_params": {
+    "max_depth": 3,
+    "learning_rate": 0.05,
+    "n_estimators": 150,
+    "scale_pos_weight": 4.51
+  },
+  "amount_column": "credit_exposure_cop"
+}

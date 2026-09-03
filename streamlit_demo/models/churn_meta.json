@@ -1,0 +1,21 @@
+{
+  "features": [
+    "months_with_bank",
+    "product_usage_score",
+    "competitor_rate_inquiries",
+    "complaint_count_last_year",
+    "active_products_change_6m",
+    "client_value_score"
+  ],
+  "target": "churned_3_months",
+  "horizon": "3 months",
+  "threshold": 0.15285871922969818,
+  "f1_score": 0.2957,
+  "best_params": {
+    "max_depth": 3,
+    "learning_rate": 0.05,
+    "n_estimators": 150,
+    "scale_pos_weight": 1
+  },
+  "amount_column": "client_value_score"
+}

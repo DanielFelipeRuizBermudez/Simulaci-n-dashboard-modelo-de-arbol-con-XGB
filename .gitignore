@@ -26,9 +26,6 @@ dist/
 .DS_Store
 Thumbs.db
 
-# Trained model artifacts (regenerate with generate_data.py + train_models.py)
-streamlit_demo/models/
-
 # Claude Code local session state
 .claude/
 
