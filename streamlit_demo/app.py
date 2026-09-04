@@ -643,10 +643,6 @@ def score_and_explain(df, model_name):
     return scored, shap_df
 
 
-def shap_explanation_from_cache(shap_df, row_index):
-    return shap_df.loc[row_index].sort_values()
-
-
 def risk_donut(label, flagged, total, pct_flagged):
     fig = go.Figure(
         data=[
@@ -831,8 +827,13 @@ def shap_beeswarm_chart(shap_df, scored, features, lang):
         margin=dict(l=10, r=10, t=10, b=40), height=90 + len(order) * 48,
         plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
         font=dict(color=BRAND_DARK, family="Manrope"),
+        showlegend=False,
     )
     return fig
+
+
+def shap_explanation_from_cache(shap_df, row_index):
+    return shap_df.loc[row_index].sort_values()
 
 
 def local_shap_chart(contrib_series, lang):
@@ -979,7 +980,11 @@ def render_explain_view(scored, shap_df, meta, label, lang, model_name):
 
     st.markdown(t("client_profile_header"))
     st.markdown(client_profile_card_html(row, meta["features"]), unsafe_allow_html=True)
-    st.plotly_chart(local_shap_chart(contrib, lang), use_container_width=True, config=PLOTLY_CONFIG)
+
+    st.plotly_chart(
+        local_shap_chart(contrib, lang),
+        use_container_width=True, config=PLOTLY_CONFIG,
+    )
 
 
 def render_tab(label, model_name, title):
