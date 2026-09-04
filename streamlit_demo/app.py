@@ -15,6 +15,7 @@ import json
 import os
 
 import joblib
+import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import shap
@@ -73,6 +74,37 @@ st.markdown(
     section[data-testid="stSidebar"] .stMarkdown,
     section[data-testid="stSidebar"] .stCaption {{ color: #EDEDED; }}
     section[data-testid="stSidebar"] hr {{ border-color: rgba(255,255,255,0.15); }}
+
+    /* Language toggle — scoped to its own radiogroup so it doesn't touch the
+       table/charts/explain segmented control on the light background. */
+    div[role="radiogroup"][aria-label="Idioma / Language"] {{
+        background: rgba(255,255,255,0.07);
+        border: 1px solid rgba(255,255,255,0.09);
+        border-radius: 999px;
+        padding: 3px;
+        gap: 2px !important;
+    }}
+    div[role="radiogroup"][aria-label="Idioma / Language"] button[role="radio"] {{
+        border: none !important;
+        border-radius: 999px !important;
+        background: transparent !important;
+        color: #b7b7b7 !important;
+        font-weight: 600;
+        transition: background .15s ease, color .15s ease;
+    }}
+    div[role="radiogroup"][aria-label="Idioma / Language"] button[role="radio"]:hover {{
+        background: rgba(255,255,255,0.08) !important;
+        color: #fff !important;
+    }}
+    div[role="radiogroup"][aria-label="Idioma / Language"] button[role="radio"][aria-checked="true"] {{
+        background: {BRAND_GREEN} !important;
+        color: {BRAND_DARK} !important;
+        box-shadow: 0 2px 10px rgba(0,252,169,0.35);
+    }}
+    div[role="radiogroup"][aria-label="Idioma / Language"] button[role="radio"][aria-checked="true"]:hover {{
+        background: {BRAND_GREEN} !important;
+        color: {BRAND_DARK} !important;
+    }}
 
     .stTabs [data-baseweb="tab-list"] {{ gap: 6px; border-bottom: 1px solid rgba(39,39,39,0.08); }}
     .stTabs [data-baseweb="tab"] {{
@@ -349,13 +381,22 @@ TR = {
         "es": "Influencia promedio de cada variable, entre los {n} clientes cargados, "
               "en ser clasificado como alto riesgo de {label} (clase 1).",
     },
-    "overall_importance": {
-        "en": "**Overall importance** (bigger = more influence, either direction)",
-        "es": "**Importancia general** (más grande = más influencia, en cualquier dirección)",
+    "beeswarm_caption": {
+        "en": "Each dot is one client. Position shows whether that variable pushed "
+              "their score up (right) or down (left); color shows whether their "
+              "own value for that variable was low or high.",
+        "es": "Cada punto es un cliente. La posición muestra si esa variable subió "
+              "(derecha) o bajó (izquierda) su puntaje; el color muestra si el "
+              "valor de esa variable para ese cliente fue bajo o alto.",
     },
-    "direction_header": {
-        "en": "**Direction** (positive = pushes risk up, negative = pushes it down)",
-        "es": "**Dirección** (positivo = sube el riesgo, negativo = lo baja)",
+    "beeswarm_low": {"en": "Low", "es": "Bajo"},
+    "beeswarm_high": {"en": "High", "es": "Alto"},
+    "beeswarm_colorbar_title": {"en": "Feature value", "es": "Valor de la variable"},
+    "beeswarm_hover_value": {"en": "Value", "es": "Valor"},
+    "bubble_hover_impact": {"en": "Impact", "es": "Impacto"},
+    "shap_value_axis": {
+        "en": "Impact on the risk score (SHAP value)",
+        "es": "Impacto en el puntaje de riesgo (valor SHAP)",
     },
     "local_shap_header": {
         "en": "### Why was one specific client flagged? (local SHAP)",
@@ -703,35 +744,95 @@ def client_profile_card_html(row, features):
     return f'<div class="ftx-profile-grid">{items}</div>'
 
 
-def shap_overview_charts(shap_df, features, lang):
-    importance = shap_df[features].abs().mean().sort_values(ascending=True)
-    direction = shap_df[features].mean().reindex(importance.index)
-    labels = [feature_label(f, lang) for f in importance.index]
+# Sequential single-hue ramp (pale mint -> brand green -> deep pine) for "how
+# high is this client's raw value for this feature" — the same role blue->red
+# plays in the official shap.summary_plot, just recolored to the brand and
+# kept distinct from the red/green used elsewhere in the app for risk
+# direction (that's a different, orthogonal quantity: x position, not color).
+BEESWARM_COLORSCALE = [[0.0, "#EAFBF4"], [0.5, BRAND_GREEN], [1.0, "#0B4432"]]
 
-    fig_imp = go.Figure(go.Bar(
-        x=importance.values, y=labels, orientation="h",
-        marker=dict(color=BRAND_GREEN),
-        hovertemplate="%{y}: %{x:.4f}<extra></extra>",
+
+def shap_beeswarm_chart(shap_df, scored, features, lang):
+    """Global SHAP as a beeswarm — the same chart shap.summary_plot(plot_type
+    ='dot') draws, rebuilt in Plotly for brand colors + hover. One marker per
+    client per feature: x = impact on the risk score, color = whether that
+    client's own value for the feature is low or high. Markers are packed
+    into a density-aware swarm (binned stacking, deterministic — no RNG) so
+    rows with many similar-impact clients form the characteristic tapered
+    'violin' shape instead of a flat scatter."""
+    order = shap_df[features].abs().mean().sort_values(ascending=True).index.tolist()
+    row_step = 0.085
+    max_offset = 0.42
+    client_ids = scored["client_id"].to_numpy()
+
+    xs, ys, colors, customdata = [], [], [], []
+    for row_idx, feat in enumerate(order):
+        x = shap_df[feat].to_numpy(dtype=float)
+        raw = scored[feat].to_numpy(dtype=float)
+        ranks = pd.Series(raw).rank(method="average", pct=True).to_numpy()
+
+        n = len(x)
+        n_bins = int(np.clip(n // 2, 12, 45))
+        x_min, x_max = x.min(), x.max()
+        span = x_max - x_min
+        bin_idx = (
+            np.zeros(n, dtype=int) if span <= 0
+            else np.clip(((x - x_min) / span * n_bins).astype(int), 0, n_bins - 1)
+        )
+
+        offsets = np.zeros(n)
+        for b in range(n_bins):
+            members = np.where(bin_idx == b)[0]
+            if len(members) == 0:
+                continue
+            members = members[np.argsort(x[members])]
+            for slot, idx in enumerate(members):
+                step = (slot + 1) // 2
+                offsets[idx] = step if slot % 2 == 0 else -step
+        offsets = np.clip(offsets * row_step, -max_offset, max_offset)
+
+        label = feature_label(feat, lang)
+        xs.extend(x.tolist())
+        ys.extend((row_idx + offsets).tolist())
+        colors.extend(ranks.tolist())
+        customdata.extend(
+            [label, cid, format_feature_value(feat, val)]
+            for cid, val in zip(client_ids, raw)
+        )
+
+    fig = go.Figure(go.Scatter(
+        x=xs, y=ys, mode="markers",
+        marker=dict(
+            size=8,
+            color=colors, cmin=0, cmax=1,
+            colorscale=BEESWARM_COLORSCALE,
+            line=dict(width=1, color="#ffffff"),
+            colorbar=dict(
+                tickvals=[0, 1], ticktext=[t("beeswarm_low"), t("beeswarm_high")],
+                thickness=12, len=0.55, outlinewidth=0,
+                title=dict(text=t("beeswarm_colorbar_title"), side="right", font=dict(size=11)),
+            ),
+        ),
+        customdata=customdata,
+        hovertemplate=(
+            "<b>%{customdata[1]}</b> — %{customdata[0]}<br>"
+            + t("beeswarm_hover_value") + ": %{customdata[2]}<br>"
+            + t("bubble_hover_impact") + ": %{x:.4f}<extra></extra>"
+        ),
     ))
-    fig_imp.update_layout(
-        margin=dict(l=10, r=10, t=10, b=10), height=320,
+    fig.add_vline(x=0, line_color="rgba(39,39,39,0.25)")
+    fig.update_layout(
+        yaxis=dict(
+            tickmode="array", tickvals=list(range(len(order))),
+            ticktext=[feature_label(f, lang) for f in order],
+            zeroline=False,
+        ),
+        xaxis_title=t("shap_value_axis"),
+        margin=dict(l=10, r=10, t=10, b=40), height=90 + len(order) * 48,
         plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
         font=dict(color=BRAND_DARK, family="Manrope"),
     )
-
-    colors = [ALERT_RED if v > 0 else BRAND_GREEN for v in direction.values]
-    fig_dir = go.Figure(go.Bar(
-        x=direction.values, y=labels, orientation="h",
-        marker=dict(color=colors),
-        hovertemplate="%{y}: %{x:.4f}<extra></extra>",
-    ))
-    fig_dir.update_layout(
-        margin=dict(l=10, r=10, t=10, b=10), height=320,
-        plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(color=BRAND_DARK, family="Manrope"),
-    )
-    fig_dir.add_vline(x=0, line_color="rgba(39,39,39,0.25)")
-    return fig_imp, fig_dir
+    return fig
 
 
 def local_shap_chart(contrib_series, lang):
@@ -853,14 +954,11 @@ def render_charts_view(scored, meta):
 def render_explain_view(scored, shap_df, meta, label, lang, model_name):
     st.markdown(t("global_shap_header"))
     st.caption(t("global_shap_caption", n=len(scored), label=label_word(label)))
-    fig_imp, fig_dir = shap_overview_charts(shap_df, meta["features"], lang)
-    col_a, col_b = st.columns(2)
-    with col_a:
-        st.markdown(t("overall_importance"))
-        st.plotly_chart(fig_imp, use_container_width=True, config=PLOTLY_CONFIG)
-    with col_b:
-        st.markdown(t("direction_header"))
-        st.plotly_chart(fig_dir, use_container_width=True, config=PLOTLY_CONFIG)
+    st.caption(t("beeswarm_caption"))
+    st.plotly_chart(
+        shap_beeswarm_chart(shap_df, scored, meta["features"], lang),
+        use_container_width=True, config=PLOTLY_CONFIG,
+    )
 
     st.divider()
     st.markdown(t("local_shap_header"))
