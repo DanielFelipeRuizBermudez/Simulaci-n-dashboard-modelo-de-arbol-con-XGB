@@ -1,0 +1,43 @@
+============================= test session starts =============================
+platform win32 -- Python 3.11.9, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\mipip\Documents\Simulaci-n-dashboard-modelo-de-arbol-con-XGB\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\mipip\Documents\Simulaci-n-dashboard-modelo-de-arbol-con-XGB\streamlit_demo
+configfile: pytest.ini
+testpaths: tests
+plugins: anyio-4.15.1
+collecting ... collected 32 items
+
+tests/test_churn_validation.py::test_rechaza_registro_incompleto PASSED  [  3%]
+tests/test_churn_validation.py::test_rechaza_cliente_duplicado PASSED    [  6%]
+tests/test_churn_validation.py::test_acepta_dataset_limpio PASSED        [  9%]
+tests/test_churn_validation.py::test_acepta_historico_real_de_la_demo PASSED [ 12%]
+tests/test_churn_validation.py::test_acepta_clientes_nuevos_sin_target PASSED [ 15%]
+tests/test_churn_validation.py::test_rechaza_antiguedad_negativa PASSED  [ 18%]
+tests/test_churn_validation.py::test_rechaza_score_fuera_de_rango PASSED [ 21%]
+tests/test_churn_validation.py::test_acepta_cambio_de_productos_negativo PASSED [ 25%]
+tests/test_churn_validation.py::test_rechaza_target_no_binario PASSED    [ 28%]
+tests/test_churn_validation.py::test_bloquea_datos_invalidos PASSED      [ 31%]
+tests/test_churn_validation.py::test_calcula_quejas_por_mes_de_antiguedad PASSED [ 34%]
+tests/test_churn_validation.py::test_marca_clientes_que_cierran_productos PASSED [ 37%]
+tests/test_churn_validation.py::test_transformacion_no_modifica_el_original PASSED [ 40%]
+tests/test_delinquency_validation.py::test_rechaza_nulo_en_variable_obligatoria PASSED [ 43%]
+tests/test_delinquency_validation.py::test_rechaza_score_fuera_de_rango[-0.01] PASSED [ 46%]
+tests/test_delinquency_validation.py::test_rechaza_score_fuera_de_rango[1.5] PASSED [ 50%]
+tests/test_delinquency_validation.py::test_acepta_dataset_valido PASSED  [ 53%]
+tests/test_delinquency_validation.py::test_acepta_historico_real_de_la_demo PASSED [ 56%]
+tests/test_delinquency_validation.py::test_acepta_clientes_nuevos_sin_target PASSED [ 59%]
+tests/test_delinquency_validation.py::test_rechaza_montos_negativos PASSED [ 62%]
+tests/test_delinquency_validation.py::test_rechaza_client_id_duplicado PASSED [ 65%]
+tests/test_delinquency_validation.py::test_rechaza_target_no_binario PASSED [ 68%]
+tests/test_delinquency_validation.py::test_rechaza_columna_faltante PASSED [ 71%]
+tests/test_delinquency_validation.py::test_bloquea_datos_invalidos PASSED [ 75%]
+tests/test_delinquency_validation.py::test_limpieza_normaliza_ids_y_quita_duplicados_exactos PASSED [ 78%]
+tests/test_delinquency_validation.py::test_calcula_razon_deuda_ingreso PASSED [ 81%]
+tests/test_delinquency_validation.py::test_marca_mora_mayor_a_30_dias PASSED [ 84%]
+tests/test_delinquency_validation.py::test_transformacion_no_modifica_el_original PASSED [ 87%]
+tests/test_train_models_gate.py::test_datos_validos_se_cargan_para_entrenar[delinquency] PASSED [ 90%]
+tests/test_train_models_gate.py::test_datos_validos_se_cargan_para_entrenar[churn] PASSED [ 93%]
+tests/test_train_models_gate.py::test_bloquea_entrenamiento_de_mora_con_datos_invalidos PASSED [ 96%]
+tests/test_train_models_gate.py::test_bloquea_entrenamiento_de_churn_con_datos_invalidos PASSED [100%]
+
+============================= 32 passed in 2.84s ==============================
