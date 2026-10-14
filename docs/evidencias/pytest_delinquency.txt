@@ -1,0 +1,26 @@
+============================= test session starts =============================
+platform win32 -- Python 3.11.9, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\mipip\Documents\Simulaci-n-dashboard-modelo-de-arbol-con-XGB\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\mipip\Documents\Simulaci-n-dashboard-modelo-de-arbol-con-XGB\streamlit_demo
+configfile: pytest.ini
+testpaths: tests
+plugins: anyio-4.15.1
+collecting ... collected 15 items
+
+tests/test_delinquency_validation.py::test_rechaza_nulo_en_variable_obligatoria PASSED [  6%]
+tests/test_delinquency_validation.py::test_rechaza_score_fuera_de_rango[-0.01] PASSED [ 13%]
+tests/test_delinquency_validation.py::test_rechaza_score_fuera_de_rango[1.5] PASSED [ 20%]
+tests/test_delinquency_validation.py::test_acepta_dataset_valido PASSED  [ 26%]
+tests/test_delinquency_validation.py::test_acepta_historico_real_de_la_demo PASSED [ 33%]
+tests/test_delinquency_validation.py::test_acepta_clientes_nuevos_sin_target PASSED [ 40%]
+tests/test_delinquency_validation.py::test_rechaza_montos_negativos PASSED [ 46%]
+tests/test_delinquency_validation.py::test_rechaza_client_id_duplicado PASSED [ 53%]
+tests/test_delinquency_validation.py::test_rechaza_target_no_binario PASSED [ 60%]
+tests/test_delinquency_validation.py::test_rechaza_columna_faltante PASSED [ 66%]
+tests/test_delinquency_validation.py::test_bloquea_datos_invalidos PASSED [ 73%]
+tests/test_delinquency_validation.py::test_limpieza_normaliza_ids_y_quita_duplicados_exactos PASSED [ 80%]
+tests/test_delinquency_validation.py::test_calcula_razon_deuda_ingreso PASSED [ 86%]
+tests/test_delinquency_validation.py::test_marca_mora_mayor_a_30_dias PASSED [ 93%]
+tests/test_delinquency_validation.py::test_transformacion_no_modifica_el_original PASSED [100%]
+
+============================= 15 passed in 0.90s ==============================
