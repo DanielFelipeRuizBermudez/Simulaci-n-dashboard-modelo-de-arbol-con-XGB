@@ -8,6 +8,7 @@ Reglas de negocio: streamlit_demo/docs/reglas_validacion_delinquency.md
 - assert_valid_delinquency(df): lanza DataValidationError si hay errores,
   para que los datos inválidos no lleguen al modelo.
 - clean_delinquency_data(df): limpieza segura antes de validar.
+- transform_delinquency_features(df): variables derivadas del historial de pago.
 """
 
 import pandas as pd
@@ -86,3 +87,15 @@ def clean_delinquency_data(df):
     out = df.copy()
     out[ID_COLUMN] = out[ID_COLUMN].astype(str).str.strip().str.upper()
     return out.drop_duplicates().reset_index(drop=True)
+
+
+def transform_delinquency_features(df):
+    """Agrega variables derivadas del historial de pago (devuelve una copia)."""
+    out = df.copy()
+    # Razón deuda/ingreso: cuántos meses de ingreso representa la exposición.
+    out["debt_to_income_ratio"] = (
+        out["credit_exposure_cop"] / out["monthly_income_cop"]
+    ).round(4)
+    # Historial de mora: 1 si el promedio de días de atraso es de 30 o más.
+    out["late_over_30_days"] = (out["avg_days_late_last_year"] >= 30).astype(int)
+    return out

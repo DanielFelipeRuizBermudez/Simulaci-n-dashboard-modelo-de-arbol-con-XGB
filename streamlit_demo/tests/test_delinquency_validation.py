@@ -17,6 +17,7 @@ from validation import (
     DataValidationError,
     assert_valid_delinquency,
     clean_delinquency_data,
+    transform_delinquency_features,
     validate_delinquency_data,
 )
 
@@ -105,3 +106,19 @@ def test_limpieza_normaliza_ids_y_quita_duplicados_exactos(valid_df):
     clean = clean_delinquency_data(dirty)
     assert clean["client_id"].tolist() == ["CL1", "CL2", "CL3"]
     assert validate_delinquency_data(clean) == []
+
+
+# --- Variables derivadas del historial de pago --------------------------------
+def test_calcula_razon_deuda_ingreso(valid_df):
+    out = transform_delinquency_features(valid_df)
+    assert out["debt_to_income_ratio"].tolist() == [2.0, 0.5, 9.0]
+
+
+def test_marca_mora_mayor_a_30_dias(valid_df):
+    out = transform_delinquency_features(valid_df)
+    assert out["late_over_30_days"].tolist() == [0, 0, 1]
+
+
+def test_transformacion_no_modifica_el_original(valid_df):
+    transform_delinquency_features(valid_df)
+    assert "debt_to_income_ratio" not in valid_df.columns
