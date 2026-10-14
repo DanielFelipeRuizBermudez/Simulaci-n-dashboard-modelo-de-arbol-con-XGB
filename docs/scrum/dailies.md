@@ -1,18 +1,12 @@
 # Bitácora de Daily Scrums
 
 Registra: Michelle. Máximo 15 minutos. Cada integrante responde: ¿qué hice?, ¿qué haré?, ¿qué me bloquea?
+Se registran solo las Dailies que realmente se hicieron (fecha, hora y medio reales).
+Evidencia: captura de la llamada o del chat en `docs/evidencias/daily_AAAA-MM-DD.png`.
 
-## Sprint 1
+## Sprint 1 (10 – 14 oct)
 
-### Daily 1 – sáb 10 oct, __:__ (medio: presencial / Meet / WhatsApp)
-
-| Integrante | ¿Qué hice? | ¿Qué haré? | Impedimentos |
-|---|---|---|---|
-| Daniel | | | |
-| Maria | | | |
-| Michelle | | | |
-
-### Daily 2 – dom 11 oct, __:__
+### Daily – sáb 10 oct, __:__ (medio: ______)
 
 | Integrante | ¿Qué hice? | ¿Qué haré? | Impedimentos |
 |---|---|---|---|
@@ -20,9 +14,7 @@ Registra: Michelle. Máximo 15 minutos. Cada integrante responde: ¿qué hice?, 
 | Maria | | | |
 | Michelle | | | |
 
-## Sprint 2
-
-### Daily 1 – lun 12 oct, __:__
+### Daily – ___ oct, __:__ (medio: ______)
 
 | Integrante | ¿Qué hice? | ¿Qué haré? | Impedimentos |
 |---|---|---|---|
@@ -30,7 +22,25 @@ Registra: Michelle. Máximo 15 minutos. Cada integrante responde: ¿qué hice?, 
 | Maria | | | |
 | Michelle | | | |
 
-### Daily 2 – mar 13 oct, __:__
+### Daily – mié 14 oct, __:__ (medio: ______)
+
+| Integrante | ¿Qué hice? | ¿Qué haré? | Impedimentos |
+|---|---|---|---|
+| Daniel | | | |
+| Maria | | | |
+| Michelle | | | |
+
+## Sprint 2 (14 – 15 oct)
+
+### Daily – mié 14 oct (inicio Sprint 2), __:__ (medio: ______)
+
+| Integrante | ¿Qué hice? | ¿Qué haré? | Impedimentos |
+|---|---|---|---|
+| Daniel | | | |
+| Maria | | | |
+| Michelle | | | |
+
+### Daily – jue 15 oct, __:__ (medio: ______)
 
 | Integrante | ¿Qué hice? | ¿Qué haré? | Impedimentos |
 |---|---|---|---|
