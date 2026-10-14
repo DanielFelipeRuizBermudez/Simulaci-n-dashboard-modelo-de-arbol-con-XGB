@@ -59,7 +59,7 @@ El CI de GitHub Actions (`.github/workflows/tests.yml`) corre pytest en cada Pul
 | #3 | `feature/sprint1-delinquency-validation` | Daniel, Maria | Michelle | Comentarios y aprobación registrados después del merge | 14 oct 11:59 |
 | #4 | `feature/sprint1-churn-validation` | Daniel, Maria | Michelle | 3 comentarios de línea + Approve **antes** del merge | 14 oct 14:18 |
 
-Evidencia: `evidencias/t2_PR_aprobado.png`, `evidencias/t3_PR_revision.png`, `evidencias/t3_PR_merge.png`.
+Evidencia: `evidencias/t2_PR_aprobado.jpeg`, `evidencias/t3_PR_revision.jpeg`, `evidencias/t3_PR_merge.jpeg`.
 
 ## 04 · Simple Design y Refactorización
 
