@@ -6,6 +6,10 @@ each model, evaluating every combination by the metric that matters
 (F2 for delinquency, F1 for churn) at its best decision threshold —
 never by accuracy, since both targets are imbalanced.
 
+Before training, the historical data must pass the data-quality rules in
+validation.py (Sprint 1, Tasks 2 and 3). If any rule fails, training stops
+with a DataValidationError so invalid data never reaches the models.
+
 Run this once (after generate_data.py) with:
     python train_models.py
 """
@@ -20,6 +24,8 @@ import pandas as pd
 from sklearn.metrics import precision_recall_curve
 from sklearn.model_selection import train_test_split
 from xgboost import XGBClassifier
+
+from validation import assert_valid_churn, assert_valid_delinquency
 
 BASE_DIR = os.path.dirname(__file__)
 DATA_DIR = os.path.join(BASE_DIR, "data")
@@ -41,6 +47,24 @@ PARAM_GRID = {
     "learning_rate": [0.05, 0.1],
     "n_estimators": [150, 300],
 }
+
+
+# Data-quality gate per model (Sprint 1 · Tarea 3: bloquear datos inválidos).
+VALIDATORS = {
+    "delinquency": assert_valid_delinquency,
+    "churn": assert_valid_churn,
+}
+
+
+def load_training_data(name, data_dir=DATA_DIR):
+    """
+    Reads the historical customer base and validates it with the model's
+    data-quality rules. Raises DataValidationError (and nothing is trained)
+    if the data is invalid.
+    """
+    df = pd.read_csv(os.path.join(data_dir, "historical_data.csv"))
+    VALIDATORS[name](df)
+    return df
 
 
 def find_best_threshold(y_true, y_proba, metric="f2"):
@@ -108,7 +132,7 @@ def grid_search_train(X_train, y_train, X_val, y_val, metric):
 
 
 def train_model(name, target_col, features, metric):
-    df = pd.read_csv(os.path.join(DATA_DIR, "historical_data.csv"))
+    df = load_training_data(name)
     X = df[features]
     y = df[target_col]
 
