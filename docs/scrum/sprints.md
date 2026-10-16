@@ -49,19 +49,24 @@ sesión en lugar de repartirse en el Sprint. Ver Retrospectiva 1.
 
 ---
 
-## Sprint 2 – Modelos y dashboards (mié 14 – jue 15 oct)
+## Sprint 2 – Modelos y dashboards (plan: mié 14 – jue 15 oct / real: mié 14 – vie 16 oct)
 
 **Objetivo del Sprint:** que cada modelo tenga sus métricas guardadas y documentadas, y que cada
-dashboard priorice clientes con reglas claras y probadas.
+dashboard priorice clientes con reglas claras y probadas. **Cumplido**
 
 Regla de revisión: Cuando Daniel es piloto lo revisa Michelle, cuando Michelle es piloto  lo revisa Maria y cuando Maria es piloto lo revisa Daniel.
 
-| # | Historia | Rama | Pareja (piloto + copiloto) | Revisor PR | Puntos | Estado |
-|---|---|---|---|---|---|---|
-| 4 | Predictive Model (Delinquency) | `feature/sprint2-delinquency-docs-validation` | Michelle + Daniel | Maria | 3 |Done|
-| 5 | Predictive Model (Churn) | `feature/sprint2-churn-docs-validation` | Michelle + Daniel | Maria | 3 |Done|
-| 6 | Delinquency Dashboard | `feature/sprint2-delinquency-dashboard` | Maria + Michelle | Daniel | 5 |Done|
-| 7 | Churn Dashboard | `feature/sprint2-churn-dashboard` | Maria + Michelle | Daniel | 5 |Done|
+| # | Historia | Rama | Pareja (piloto + copiloto) | Revisor PR | PR | Merge | Puntos | Estado |
+|---|---|---|---|---|---|---|---|---|
+| 4 | Predictive Model (Delinquency) | `feature/sprint2-delinquency-docs-validation` | Michelle + Daniel | Maria | #6 | 15 oct 21:10 | 3 | Done |
+| 5 | Predictive Model (Churn) | `feature/sprint2-churn-docs-validation` | Michelle + Daniel | Maria | #7 | 15 oct 21:18 | 3 | Done |
+| 6 | Delinquency Dashboard | `feature/sprint2-delinquency-dashboard` | Maria + Michelle | Daniel | #9 | 16 oct 05:36 | 5 | Done |
+| 7 | Churn Dashboard | `feature/sprint2-churn-dashboard` | Maria + Michelle | Daniel | #10 | 16 oct 11:09 | 5 | Done |
+
+- Puntos comprometidos: 16
+- Puntos completados: 16
+- Velocity real: 16 puntos (100 % de lo comprometido), en 3 días calendario en lugar de los 2 planeados.
+- Resultado técnico: 57 tests automatizados en verde; ambos dashboards usan `dashboard_logic.py` con reglas de alerta, `priority_score` y alerta SHAP.
 
 ### Burndown (puntos restantes al final de cada día)
 
