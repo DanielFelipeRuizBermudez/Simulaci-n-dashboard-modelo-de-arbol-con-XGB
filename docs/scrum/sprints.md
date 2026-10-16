@@ -7,10 +7,10 @@ Gráficos: `python docs/scrum/burndown.py` (lee `docs/scrum/burndown.csv` y guar
 
 ## Definition of Done
 
-- [ ] Código en una rama `feature/...` trabajada en pareja (piloto/copiloto)
-- [ ] Tests automatizados escritos y en verde (`pytest`)
-- [ ] Pull Request revisado y aprobado por el integrante que no estuvo en la pareja
-- [ ] Merge a `main` y tarjeta movida a *Done* en Trello
+- [x] Código en una rama `feature/...` trabajada en pareja (piloto/copiloto)
+- [x] Tests automatizados escritos y en verde (`pytest`)
+- [x] Pull Request revisado y aprobado por el integrante que no estuvo en la pareja
+- [x] Merge a `main` y tarjeta movida a *Done* en Trello
 
 ---
 
