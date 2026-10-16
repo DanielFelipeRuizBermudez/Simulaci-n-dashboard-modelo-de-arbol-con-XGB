@@ -35,11 +35,17 @@ streamlit_demo/
 ├── app.py                      # App principal de Streamlit
 ├── generate_data.py             # Genera los datos sintéticos de entrenamiento
 ├── train_models.py              # Entrena ambos modelos XGBoost (grid search)
+├── validation.py                # Reglas de calidad de datos (Sprint 1)
+├── evaluate_models.py           # Reportes de validación de los modelos (Sprint 2)
+├── dashboard_logic.py           # Alertas, priorización y versión del modelo (Sprint 2)
 ├── requirements.txt
 ├── data/
 │   ├── historical_data.csv          # Base histórica sintética (entrenamiento)
 │   └── new_clients_template.csv     # Ejemplo de clientes nuevos para calificar
-├── models/                      # Se genera al correr train_models.py (no versionado)
+├── models/                      # Modelos entrenados (versionados en el repo)
+├── reports/                     # Reportes JSON de validación de los modelos
+├── docs/                        # Reglas de validación y documentación de los modelos
+├── tests/                       # Pruebas automatizadas (pytest)
 ├── assets/
 │   └── logo.jpg
 └── .streamlit/
@@ -56,8 +62,8 @@ streamlit_demo/
    pip install -r requirements.txt
    ```
 
-2. Genera los datos y entrena los modelos (crea la carpeta `models/`, que no
-   se sube al repo):
+2. Los modelos ya entrenados están en `models/`. Para regenerar los datos y
+   reentrenarlos:
 
    ```bash
    python generate_data.py
@@ -84,6 +90,18 @@ streamlit_demo/
    ```
 
    Se abre en `http://localhost:8501`.
+
+5. Corre las pruebas automatizadas (también corren en GitHub Actions en cada
+   Pull Request):
+
+   ```bash
+   pytest -v
+   ```
+
+## Gestión del proyecto (Corte 2)
+
+La documentación Scrum/XP está en [`docs/`](docs/README.md): Sprints, Velocity y
+Burndown, Dailies, Retrospectivas y la bitácora de prácticas XP.
 
 ## Nota sobre los datos
 
