@@ -22,8 +22,10 @@ import shap
 import streamlit as st
 
 from dashboard_logic import (
+    CHURN_KEY_FIELDS,
     data_fingerprint,
     model_version,
+    prepare_churn_dashboard,
     prepare_delinquency_dashboard,
     score_clients,
 )
@@ -223,7 +225,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-
 ICONS = {
     "group": '<circle cx="8.5" cy="8" r="3"/><path d="M3.5 20c0-3.3 2.2-5.5 5-5.5s5 2.2 5 5.5"/>'
              '<circle cx="17" cy="9" r="2.3"/><path d="M14.8 20c0-2.6 1-4.6 3-5.4"/>',
@@ -271,7 +272,6 @@ def icon_svg(name, size=16, color="currentColor", stroke_width=1.8):
         f'stroke-linecap="round" stroke-linejoin="round" '
         f'style="display:inline-block;vertical-align:-0.15em;flex-shrink:0;">{body}</svg>'
     )
-
 
 TR = {
     "app_title": {
@@ -366,6 +366,8 @@ TR = {
     "alert_high": {"en": "High · 30+ days late", "es": "Alta · 30+ días de atraso"},
     "alert_medium": {"en": "Medium · flagged", "es": "Media · marcado"},
     "alert_none": {"en": "No alert", "es": "Sin alerta"},
+    "col_alert_driver": {"en": "Alert driver (SHAP)", "es": "Dato que dispara la alerta (SHAP)"},
+    "col_priority_value": {"en": "Priority (risk × client value)", "es": "Prioridad (riesgo × valor del cliente)"},
     "model_version_caption": {
         "en": ":material/verified: Model version: `{version}` · data batch: `{data}`",
         "es": ":material/verified: Versión del modelo: `{version}` · lote de datos: `{data}`",
@@ -602,7 +604,6 @@ with st.sidebar:
     st.divider()
 
 
-
 @st.cache_resource
 def load_model_bundle(name):
     model = joblib.load(os.path.join(MODEL_DIR, f"{name}_model.pkl"))
@@ -613,7 +614,7 @@ def load_model_bundle(name):
 
 
 def score_new_clients(df, model, meta):
-    return score_clients(df, model, meta)
+   return score_clients(df, model, meta)
 
 
 def compute_batch_shap(model, explainer, meta, scored_df):
@@ -729,6 +730,7 @@ def client_profile_card_html(row, features):
         for f in features
     )
     return f'<div class="ftx-profile-grid">{items}</div>'
+
 
 BEESWARM_COLORSCALE = [[0.0, "#EAFBF4"], [0.5, BRAND_GREEN], [1.0, "#0B4432"]]
 
@@ -891,7 +893,7 @@ def view_selector(model_name):
     return selected or "table"
 
 
-def render_table_view(scored, meta, lang):
+def render_table_view(scored, meta, lang, key_fields=None):
     table = scored[["client_id", "flagged"]].copy()
     table["risk_pct"] = scored["risk_score"] * 100
     extra_cols = []
@@ -901,6 +903,9 @@ def render_table_view(scored, meta, lang):
     if "priority_score" in scored.columns:
         table["priority_score"] = scored["priority_score"]
         extra_cols.append("priority_score")
+    if "alert_driver" in scored.columns:
+        table["alert_driver"] = scored["alert_driver"].map(lambda f: feature_label(f, lang) if f else "")
+        extra_cols.append("alert_driver")
     for f in meta["features"]:
         fmt = FEATURE_META.get(f, {}).get("fmt")
         table[f] = scored[f] * 100 if fmt == "pct" else scored[f]
@@ -912,7 +917,13 @@ def render_table_view(scored, meta, lang):
             t("col_risk_score"), format="%.1f%%", min_value=0, max_value=100,
         ),
         "alert_level": st.column_config.TextColumn(t("col_alert_level")),
-        "priority_score": st.column_config.NumberColumn(t("col_priority"), format="$%.0f"),
+        # Mora prioriza por exposición en COP; churn por valor del cliente (score 0-1).
+        "priority_score": (
+            st.column_config.NumberColumn(t("col_priority"), format="$%.0f")
+            if FEATURE_META.get(meta.get("amount_column"), {}).get("fmt") == "money"
+            else st.column_config.NumberColumn(t("col_priority_value"), format="%.3f")
+        ),
+        "alert_driver": st.column_config.TextColumn(t("col_alert_driver")),
     }
     for f in meta["features"]:
         label = feature_label(f, lang)
@@ -930,7 +941,8 @@ def render_table_view(scored, meta, lang):
         else:
             column_config[f] = st.column_config.NumberColumn(label, format="%.0f")
 
-    column_order = ["client_id", "flagged", "risk_pct"] + extra_cols + meta["features"]
+    features = list(key_fields or []) + [f for f in meta["features"] if f not in (key_fields or [])]
+    column_order = ["client_id", "flagged", "risk_pct"] + extra_cols + features
     st.dataframe(
         table, column_config=column_config, column_order=column_order,
         hide_index=True, use_container_width=True, height=340,
@@ -1026,7 +1038,6 @@ def render_tab(label, model_name, title):
             pd.read_csv(NEW_CLIENTS_TEMPLATE) if os.path.exists(NEW_CLIENTS_TEMPLATE) else None
         )
 
-    last_upload_key = f"_last_upload_id_{model_name}"
     if uploaded is not None and st.session_state.get(last_upload_key) != uploaded.file_id:
         st.session_state[last_upload_key] = uploaded.file_id
         new_df = pd.read_csv(uploaded)
@@ -1054,10 +1065,12 @@ def render_tab(label, model_name, title):
     scored, shap_df = score_and_explain(df, model_name)
     if model_name == "delinquency":
         scored = prepare_delinquency_dashboard(scored, meta)
+    elif model_name == "churn":
+        scored = prepare_churn_dashboard(scored, meta, shap_df)
 
-    st.session_state[f"scored_{model_name}"] = scored
+    st.session_state[f"scored_{model_name}"] = scored  # used by the Sol chat tab's tools
     st.session_state[f"meta_{model_name}"] = meta
-    st.session_state[f"shap_{model_name}"] = shap_df
+    st.session_state[f"shap_{model_name}"] = shap_df  # same, indexed like `scored`
 
     st.markdown(t("key_indicators"))
     kpi_row(scored, meta, label)
@@ -1066,7 +1079,7 @@ def render_tab(label, model_name, title):
     if view == "table":
         st.markdown(t("prioritized_list"))
         st.caption(t("model_version_caption", version=model_version(model_name, meta, MODEL_DIR), data=data_fingerprint(df)))
-        render_table_view(scored, meta, lang)
+        render_table_view(scored, meta, lang, key_fields=CHURN_KEY_FIELDS if model_name == "churn" else None)
     elif view == "charts":
         st.markdown(t("risk_distribution"))
         render_charts_view(scored, meta)

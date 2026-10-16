@@ -1,12 +1,15 @@
 """
 Lógica de los dashboards, separada de app.py para poder probarla sin Streamlit.
-Sprint 2 · Tarea 6 · Delinquency Dashboard.
+Sprint 2 · Tarea 6 · Delinquency Dashboard y Tarea 7 · Churn Dashboard.
 
 - load_model / score_clients: carga el modelo y puntúa clientes (la usa app.py).
 - model_version: versión del modelo y del dato que generó cada alerta.
 - delinquency_alert_level: reglas de alerta 30/60 días.
 - add_priority / prepare_delinquency_dashboard: lista priorizada por
   priority_score = risk_score × credit_exposure_cop.
+- CHURN_KEY_FIELDS / churn_alert_driver / prepare_churn_dashboard: indicadores
+  clave, priority_score = risk_score × client_value_score y la variable SHAP
+  que dispara cada alerta de churn.
 """
 
 import hashlib
@@ -18,10 +21,9 @@ import pandas as pd
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_DIR = os.path.join(BASE_DIR, "models")
-
-ALERT_DAYS_HIGH = 30   
-ALERT_DAYS_CRITICAL = 60 
-ALERT_LEVELS = ["critical", "high", "medium", "none"] 
+ALERT_DAYS_HIGH = 30
+ALERT_DAYS_CRITICAL = 60
+ALERT_LEVELS = ["critical", "high", "medium", "none"]  
 
 
 def load_model(name, model_dir=MODEL_DIR):
@@ -83,4 +85,23 @@ def add_priority(scored, amount_col):
 def prepare_delinquency_dashboard(scored, meta):
     out = add_priority(scored, meta.get("amount_column", "credit_exposure_cop"))
     out["alert_level"] = delinquency_alert_level(out)
+    return out
+
+
+CHURN_KEY_FIELDS = ["months_with_bank", "complaint_count_last_year", "product_usage_score"]
+
+
+def churn_alert_driver(scored, shap_df):
+    """
+    Para cada cliente marcado, la variable con el mayor aporte SHAP positivo
+    (la que más empuja su riesgo de fuga hacia arriba). Vacío si no está marcado.
+    """
+    shap_aligned = shap_df.loc[scored.index]
+    driver = shap_aligned.idxmax(axis=1).where(shap_aligned.max(axis=1) > 0, "")
+    return driver.where(scored["flagged"], "")
+
+
+def prepare_churn_dashboard(scored, meta, shap_df):
+    out = add_priority(scored, meta.get("amount_column", "client_value_score"))
+    out["alert_driver"] = churn_alert_driver(out, shap_df)
     return out
