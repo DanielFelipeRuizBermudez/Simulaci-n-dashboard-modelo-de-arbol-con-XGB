@@ -86,10 +86,17 @@ En el Sprint 2 el check `tests` quedó en verde antes del merge en los PR #6, #7
 | #8 | `docs/evidencias-sprint1` | Daniel | Maria | Merge por Maria | 16 oct 11:13 |
 | #9 | `feature/sprint2-delinquency-dashboard` | Maria, Michelle | Daniel | 2 comentarios de línea + Approve antes del merge | 16 oct 05:36 |
 | #10 | `feature/sprint2-churn-dashboard` | Maria, Michelle | Daniel | Comentarios de línea + Approve antes del merge | 16 oct 11:09 |
+| #11 | `docs/evidencias-sprint2` | Daniel | Michelle | Merge por Michelle | 16 oct 12:09 |
+| #12 | `docs/ajustes-cierre-sprint2` | Maria | Michelle | Merge por Michelle | 16 oct 12:53 |
+
+**Incidente:** el commit `0fcbd80` (cierre del Sprint 2) se subió directo a `main` sin rama ni Pull Request.
+Se detectó en el mismo momento; los ajustes siguientes se hicieron en la rama `docs/ajustes-cierre-sprint2`
+y entraron por el PR #12. Es el único commit del proyecto que no pasó por revisión.
 
 Seguimiento en Trello: `evidencias/trello_sprint1_en_progreso.png` (Tareas 2 y 3 en curso) y
 `evidencias/trello_sprint1_done.jpg` (cierre del Sprint 1); `evidencias/t4_done.png`, `evidencias/t5_done.png` y
-`evidencias/modelo_delinquiency_done.png` (avance del Sprint 2).
+`evidencias/modelo_delinquiency_done.png`, `evidencias/churn_model_done.png` y `evidencias/t7_QA.png` (avance del Sprint 2) y
+`evidencias/trello_sprint2_done.png` (cierre del Sprint 2). Suite completa en verde antes del cierre: `evidencias/app_verde.png`.
 
 Evidencia: `evidencias/t2_PR_aprobado.jpeg`, `evidencias/t3_PR_revision.jpeg`, `evidencias/t3_PR_aprobado.png`,
 `evidencias/t4_PR_revision.png`, `evidencias/t5_PR_revision.png`, `evidencias/t6_PR_aprobado.png`, `evidencias/t7_PR_aprobado.png`.
