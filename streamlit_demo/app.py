@@ -21,6 +21,13 @@ import plotly.graph_objects as go
 import shap
 import streamlit as st
 
+from dashboard_logic import (
+    data_fingerprint,
+    model_version,
+    prepare_delinquency_dashboard,
+    score_clients,
+)
+
 BASE_DIR = os.path.dirname(__file__)
 MODEL_DIR = os.path.join(BASE_DIR, "models")
 DATA_DIR = os.path.join(BASE_DIR, "data")
@@ -43,8 +50,6 @@ st.set_page_config(
     layout="wide",
 )
 
-
-# ---------- visual system (CSS) ----------
 
 st.markdown(
     f"""
@@ -219,15 +224,6 @@ st.markdown(
 )
 
 
-# ---------- icon system ----------
-#
-# Streamlit natively renders ":material/name:" shortcodes as small mono-line
-# symbols (not emoji) inside st.markdown/st.write text, button/tab/expander
-# labels and chat_message avatars — used throughout below wherever those
-# widgets are involved. Raw HTML blocks (unsafe_allow_html=True) don't get
-# that treatment, so the hand-drawn outline icons below cover those spots
-# (hero, stat cards, call card, client profile grid, footer).
-
 ICONS = {
     "group": '<circle cx="8.5" cy="8" r="3"/><path d="M3.5 20c0-3.3 2.2-5.5 5-5.5s5 2.2 5 5.5"/>'
              '<circle cx="17" cy="9" r="2.3"/><path d="M14.8 20c0-2.6 1-4.6 3-5.4"/>',
@@ -276,13 +272,6 @@ def icon_svg(name, size=16, color="currentColor", stroke_width=1.8):
         f'style="display:inline-block;vertical-align:-0.15em;flex-shrink:0;">{body}</svg>'
     )
 
-
-# ---------- i18n ----------
-#
-# The UI (labels, buttons, headers) is translated via TR below and the t()
-# helper. Sol's chat is a separate matter: it already detects the language
-# of each question and replies in kind (see SOL_SYSTEM_PROMPT), regardless
-# of the UI language chosen here.
 
 TR = {
     "app_title": {
@@ -371,6 +360,16 @@ TR = {
     "col_client_id": {"en": "Client", "es": "Cliente"},
     "col_risk_score": {"en": "Risk (%)", "es": "Riesgo (%)"},
     "col_flagged": {"en": "Flagged", "es": "Marcado"},
+    "col_alert_level": {"en": "Alert (30/60 days)", "es": "Alerta (30/60 días)"},
+    "col_priority": {"en": "Priority (risk × exposure)", "es": "Prioridad (riesgo × exposición)"},
+    "alert_critical": {"en": "Critical · 60+ days late", "es": "Crítica · 60+ días de atraso"},
+    "alert_high": {"en": "High · 30+ days late", "es": "Alta · 30+ días de atraso"},
+    "alert_medium": {"en": "Medium · flagged", "es": "Media · marcado"},
+    "alert_none": {"en": "No alert", "es": "Sin alerta"},
+    "model_version_caption": {
+        "en": ":material/verified: Model version: `{version}` · data batch: `{data}`",
+        "es": ":material/verified: Versión del modelo: `{version}` · lote de datos: `{data}`",
+    },
     "global_shap_header": {
         "en": "### What drives this model overall? (global SHAP)",
         "es": "### ¿Qué impulsa este modelo en general? (SHAP global)",
@@ -482,8 +481,6 @@ LABEL_WORDS = {
     "churn": {"en": "churn", "es": "deserción"},
 }
 
-# Human-readable metadata for every raw feature column used by either model —
-# powers the profile card, the dataframe headers and the SHAP chart labels.
 FEATURE_META = {
     "monthly_income_cop": {"icon": "payments", "es": "Ingreso mensual", "en": "Monthly income", "fmt": "money"},
     "credit_exposure_cop": {"icon": "bank", "es": "Exposición crediticia", "en": "Credit exposure", "fmt": "money"},
@@ -605,7 +602,6 @@ with st.sidebar:
     st.divider()
 
 
-# ---------- prediction helpers ----------
 
 @st.cache_resource
 def load_model_bundle(name):
@@ -617,12 +613,7 @@ def load_model_bundle(name):
 
 
 def score_new_clients(df, model, meta):
-    X = df[meta["features"]]
-    proba = model.predict_proba(X)[:, 1]
-    out = df.copy()
-    out["risk_score"] = proba
-    out["flagged"] = out["risk_score"] >= meta["threshold"]
-    return out.sort_values("risk_score", ascending=False)
+    return score_clients(df, model, meta)
 
 
 def compute_batch_shap(model, explainer, meta, scored_df):
@@ -739,12 +730,6 @@ def client_profile_card_html(row, features):
     )
     return f'<div class="ftx-profile-grid">{items}</div>'
 
-
-# Sequential single-hue ramp (pale mint -> brand green -> deep pine) for "how
-# high is this client's raw value for this feature" — the same role blue->red
-# plays in the official shap.summary_plot, just recolored to the brand and
-# kept distinct from the red/green used elsewhere in the app for risk
-# direction (that's a different, orthogonal quantity: x position, not color).
 BEESWARM_COLORSCALE = [[0.0, "#EAFBF4"], [0.5, BRAND_GREEN], [1.0, "#0B4432"]]
 
 
@@ -909,6 +894,13 @@ def view_selector(model_name):
 def render_table_view(scored, meta, lang):
     table = scored[["client_id", "flagged"]].copy()
     table["risk_pct"] = scored["risk_score"] * 100
+    extra_cols = []
+    if "alert_level" in scored.columns:
+        table["alert_level"] = scored["alert_level"].map(lambda code: t(f"alert_{code}"))
+        extra_cols.append("alert_level")
+    if "priority_score" in scored.columns:
+        table["priority_score"] = scored["priority_score"]
+        extra_cols.append("priority_score")
     for f in meta["features"]:
         fmt = FEATURE_META.get(f, {}).get("fmt")
         table[f] = scored[f] * 100 if fmt == "pct" else scored[f]
@@ -919,6 +911,8 @@ def render_table_view(scored, meta, lang):
         "risk_pct": st.column_config.ProgressColumn(
             t("col_risk_score"), format="%.1f%%", min_value=0, max_value=100,
         ),
+        "alert_level": st.column_config.TextColumn(t("col_alert_level")),
+        "priority_score": st.column_config.NumberColumn(t("col_priority"), format="$%.0f"),
     }
     for f in meta["features"]:
         label = feature_label(f, lang)
@@ -936,7 +930,7 @@ def render_table_view(scored, meta, lang):
         else:
             column_config[f] = st.column_config.NumberColumn(label, format="%.0f")
 
-    column_order = ["client_id", "flagged", "risk_pct"] + meta["features"]
+    column_order = ["client_id", "flagged", "risk_pct"] + extra_cols + meta["features"]
     st.dataframe(
         table, column_config=column_config, column_order=column_order,
         hide_index=True, use_container_width=True, height=340,
@@ -1032,9 +1026,6 @@ def render_tab(label, model_name, title):
             pd.read_csv(NEW_CLIENTS_TEMPLATE) if os.path.exists(NEW_CLIENTS_TEMPLATE) else None
         )
 
-    # file_uploader keeps returning the same file across reruns until the
-    # user picks a new one or clears it — only (re)process it once per
-    # actual upload, so it doesn't stomp on the buttons below.
     last_upload_key = f"_last_upload_id_{model_name}"
     if uploaded is not None and st.session_state.get(last_upload_key) != uploaded.file_id:
         st.session_state[last_upload_key] = uploaded.file_id
@@ -1061,10 +1052,12 @@ def render_tab(label, model_name, title):
         return
 
     scored, shap_df = score_and_explain(df, model_name)
+    if model_name == "delinquency":
+        scored = prepare_delinquency_dashboard(scored, meta)
 
-    st.session_state[f"scored_{model_name}"] = scored  # used by the Sol chat tab's tools
+    st.session_state[f"scored_{model_name}"] = scored
     st.session_state[f"meta_{model_name}"] = meta
-    st.session_state[f"shap_{model_name}"] = shap_df  # same, indexed like `scored`
+    st.session_state[f"shap_{model_name}"] = shap_df
 
     st.markdown(t("key_indicators"))
     kpi_row(scored, meta, label)
@@ -1072,6 +1065,7 @@ def render_tab(label, model_name, title):
     view = view_selector(model_name)
     if view == "table":
         st.markdown(t("prioritized_list"))
+        st.caption(t("model_version_caption", version=model_version(model_name, meta, MODEL_DIR), data=data_fingerprint(df)))
         render_table_view(scored, meta, lang)
     elif view == "charts":
         st.markdown(t("risk_distribution"))
@@ -1079,12 +1073,6 @@ def render_tab(label, model_name, title):
     else:
         render_explain_view(scored, shap_df, meta, label, lang, model_name)
 
-
-# ---------- Sol chat (Gemini API, with real tools — not just a text summary) ----------
-#
-# These functions are passed to Gemini as "tools": the model decides on
-# its own when a question needs one of them (e.g. "give me 10 clients to
-# call"), calls it, and gets back exact numbers instead of guessing.
 
 def get_kpis(model: str) -> dict:
     """Returns the key indicators (KPIs) for the most recent batch of scored
@@ -1346,8 +1334,6 @@ def render_sol_chat():
             except Exception as e:
                 st.error(t("sol_error", error=e))
 
-
-# ---------- layout ----------
 
 _logo_b64 = image_base64(LOGO_PATH)
 _logo_html = f'<img src="data:image/png;base64,{_logo_b64}" alt="FinTech Sol" />' if _logo_b64 else ""
