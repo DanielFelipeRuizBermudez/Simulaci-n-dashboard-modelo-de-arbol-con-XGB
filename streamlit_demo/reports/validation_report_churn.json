@@ -1,0 +1,61 @@
+{
+  "model": "churn",
+  "target": "churned_3_months",
+  "metric": "f1",
+  "threshold": 0.1529,
+  "n_validation": 1200,
+  "positive_rate_validation": 0.1475,
+  "best_params": {
+    "max_depth": 3,
+    "learning_rate": 0.05,
+    "n_estimators": 150,
+    "scale_pos_weight": 1
+  },
+  "score": 0.2957,
+  "precision": 0.1988,
+  "recall": 0.5763,
+  "confusion_matrix": {
+    "tn": 612,
+    "fp": 411,
+    "fn": 75,
+    "tp": 102
+  },
+  "top_features_shap": [
+    {
+      "variable": "product_usage_score",
+      "mean_abs_shap": 0.2097
+    },
+    {
+      "variable": "active_products_change_6m",
+      "mean_abs_shap": 0.1868
+    },
+    {
+      "variable": "competitor_rate_inquiries",
+      "mean_abs_shap": 0.1686
+    },
+    {
+      "variable": "complaint_count_last_year",
+      "mean_abs_shap": 0.075
+    },
+    {
+      "variable": "client_value_score",
+      "mean_abs_shap": 0.0593
+    }
+  ],
+  "derived_features_comparison": {
+    "score": 0.2933,
+    "precision": 0.1988,
+    "recall": 0.5593,
+    "confusion_matrix": {
+      "tn": 624,
+      "fp": 399,
+      "fn": 78,
+      "tp": 99
+    },
+    "threshold": 0.1537,
+    "features_added": [
+      "complaints_per_month",
+      "products_declining"
+    ]
+  }
+}
