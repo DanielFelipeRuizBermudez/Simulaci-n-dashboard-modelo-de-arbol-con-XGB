@@ -5,3 +5,7 @@ sprint,dia,fecha,ideal,real
 1,3,lun 12,0,10
 1,4,mar 13,0,10
 1,5,mie 14,0,0
+2,0,inicio,16,16
+2,1,mie 14,8,16
+2,2,jue 15,0,10
+2,3,vie 16,0,0

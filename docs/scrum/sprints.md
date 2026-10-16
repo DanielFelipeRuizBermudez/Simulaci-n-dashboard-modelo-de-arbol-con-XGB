@@ -58,13 +58,20 @@ Regla de revisión: Cuando Daniel es piloto lo revisa Michelle, cuando Michelle 
 
 | # | Historia | Rama | Pareja (piloto + copiloto) | Revisor PR | Puntos | Estado |
 |---|---|---|---|---|---|---|
-| 4 | Predictive Model (Delinquency) | `feature/sprint2-delinquency-docs-validation` | Michelle + Daniel | Maria | 3 | |
-| 5 | Predictive Model (Churn) | `feature/sprint2-churn-docs-validation` | Michelle + Daniel | Maria | 3 | |
-| 6 | Delinquency Dashboard | `feature/sprint2-delinquency-dashboard` | Maria + Michelle | Daniel | 5 | |
-| 7 | Churn Dashboard | `feature/sprint2-churn-dashboard` | Maria + Michelle | Daniel | 5 | |
+| 4 | Predictive Model (Delinquency) | `feature/sprint2-delinquency-docs-validation` | Michelle + Daniel | Maria | 3 |Done|
+| 5 | Predictive Model (Churn) | `feature/sprint2-churn-docs-validation` | Michelle + Daniel | Maria | 3 |Done|
+| 6 | Delinquency Dashboard | `feature/sprint2-delinquency-dashboard` | Maria + Michelle | Daniel | 5 |Done|
+| 7 | Churn Dashboard | `feature/sprint2-churn-dashboard` | Maria + Michelle | Daniel | 5 |Done|
 
-- Puntos comprometidos: **16**
-- Puntos completados: ___
-- Velocity real: ___
+### Burndown (puntos restantes al final de cada día)
 
-Datos del Burndown: agregar las filas del Sprint 2 en `docs/scrum/burndown.csv` y correr el script.
+![Burndown Sprint 2](../evidencias/burndown_sprint2.png)
+
+| Día | Fecha | Ideal | Real | Qué pasó |
+|---|---|---|---|---|
+| 0 | inicio | 16 | 16 | Inicio del Sprint 2 |
+| 1 | mié 14 | 8 | 16 | Tareas 4 y 5 listas en rama, sin merge |
+| 2 | jue 15 | 0 | 10 | PR #6 (21:10) y #7 (21:18) fusionados |
+| 3 | vie 16 | 0 | 0 | PR #9 (05:36) y #10 (11:09) fusionados |
+
+**Lectura:** la línea real se mantuvo en 16 el primer día, bajó a 10 al fusionar las Tareas 4 y 5 el jueves por la noche y llegó a 0 el viernes con las Tareas 6 y 7. Se completó todo lo comprometido (Velocity 100 %) pero con un día de retraso, porque la Tarea 7 dependía de la 6 y su PR se fusionó hasta el viernes. Ver Retrospectiva 2.

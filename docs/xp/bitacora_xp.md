@@ -32,18 +32,21 @@ todas las subtareas de las Tareas 2 y 3 y Maria copiloto.
 
 | Tarea | Subtarea | Fecha | Piloto (autor) | Copiloto (co-author) | Commit | Evidencia |
 |---|---|---|---|---|---|---|
-| 4 · Model Delinquency | Tests del reporte (rojo) | | Michelle | Daniel | | |
-| 4 · Model Delinquency | Reporte F2 en archivo | | Michelle | Daniel | | |
-| 4 · Model Delinquency | Documentar resultados y limitaciones | | Michelle | Daniel | | |
-| 5 · Model Churn | Tests del reporte (rojo) | | Michelle | Daniel | | |
-| 5 · Model Churn | Reporte F1 en archivo | | Michelle | Daniel | | |
-| 5 · Model Churn | Documentar resultados y limitaciones | | Michelle | Daniel | | |
-| 6 · Delinquency Dashboard | Tests (rojo) | | Maria | | | |
-| 6 · Delinquency Dashboard | Reglas 30/60 y versión del modelo | | Maria | | | |
-| 6 · Delinquency Dashboard | Priorización en `app.py` | | Maria | | | |
-| 7 · Churn Dashboard | Tests (rojo) | | Maria | | | |
-| 7 · Churn Dashboard | Campos clave y alerta SHAP | | Maria | | | |
-| 7 · Churn Dashboard | Priorización en `app.py` | | Maria | | | |
+| 4 · Model Delinquency | Tests de validación del modelo (rojo) | 14 oct 16:21 | Michelle | Daniel | `5bb2bc2` | `evidencias/t4_pytest_rojo.png` |
+| 4 · Model Delinquency | `evaluate_models.py` y reporte F2 | 14 oct 16:29 | Michelle | Daniel | `535d98f` | `evidencias/t4_pytest_verde.png` |
+| 4 · Model Delinquency | Documentar resultados, SHAP y limitaciones | 14 oct 16:30 | Michelle | Daniel | `448233f` | `streamlit_demo/docs/model_delinquency.md` |
+| 5 · Model Churn | Tests de evaluación F1 (rojo) | 14 oct 16:57 | Michelle | Daniel | `19d771e` | `evidencias/t5_pytest_rojo.png` |
+| 5 · Model Churn | Reporte F1 y matriz de confusión | 14 oct 17:00 | Michelle | Daniel | `c87c13e` | `evidencias/t5_pytest_verde.png` |
+| 5 · Model Churn | Documentar resultados, SHAP y limitaciones | 14 oct 17:01 | Michelle | Daniel | `f23c89f` | `streamlit_demo/docs/model_churn.md` |
+| 6 · Delinquency Dashboard | Tests de conexión, alertas 30/60 y prioridad (rojo) | 15 oct 21:59 | Maria | Michelle | `89ac833` | `evidencias/t6_pytest_rojo.png` |
+| 6 · Delinquency Dashboard | Reglas de alerta 30/60 y versión del modelo | 15 oct 22:10 | Maria | Michelle | `ffde42c` | `evidencias/t6_pytest_verde.png` |
+| 6 · Delinquency Dashboard | Alerta, `priority_score` y versión en `app.py` | 15 oct 22:26 | Maria | Michelle | `a440101` | `evidencias/t6_dashboard.png` |
+| 7 · Churn Dashboard | Tests de conexión y alerta SHAP (rojo) | 16 oct 10:28 | Maria | Michelle | `85960c9` | `evidencias/t7_pytest_rojo.png` |
+| 7 · Churn Dashboard | Campos clave y variable SHAP que dispara la alerta | 16 oct 10:34 | Maria | Michelle | `33d2647` | |
+| 7 · Churn Dashboard | `priority_score` y alerta SHAP en `app.py` | 16 oct 10:48 | Maria | Michelle | `5d0ccf4` | `evidencias/t7_dashboard.png` |
+
+En el Sprint 2 cada pareja trabajó desde el PC del piloto: Michelle con Daniel en los modelos y Maria
+con Michelle en los dashboards. Todos los commits registran al copiloto con `Co-authored-by:`.
 
 ## 02 · Test-Driven Development
 
@@ -51,6 +54,12 @@ todas las subtareas de las Tareas 2 y 3 y Maria copiloto.
 |---|---|---|---|---|---|
 | 14 oct | `feature/sprint1-delinquency-validation` | `tests/test_delinquency_validation.py` | Error: no existe `validation.py` (commit `09c6443`) | 15 passed (commit `78339b8`) | `t2_pytest_rojo.png`, `t2_pytest_verde.png`, `pytest_delinquency.txt` |
 | 14 oct | `feature/sprint1-churn-validation` | `tests/test_churn_validation.py`, `tests/test_train_models_gate.py` | Error: faltan funciones de churn (commit `af01083`) | 32 passed (commit `40d16ee`) | `t3_pytest_rojo.png`, `t3_pytest_verde.png`, `pytest_churn.txt` |
+| 14 oct | `feature/sprint2-delinquency-docs-validation` | `tests/test_model_delinquency.py` | Error: no existe `evaluate_models.py` (commit `5bb2bc2`) | 40 passed (commit `535d98f`) | `t4_pytest_rojo.png`, `t4_pytest_verde.png` |
+| 14 oct | `feature/sprint2-churn-docs-validation` | `tests/test_model_churn.py` | Falla: no existe el reporte de churn (commit `19d771e`) | 46 passed (commit `c87c13e`) | `t5_pytest_rojo.png`, `t5_pytest_verde.png` |
+| 15 oct | `feature/sprint2-delinquency-dashboard` | `tests/test_delinquency_dashboard.py` | Error: no existe `dashboard_logic.py` (commit `89ac833`) | 52 (commit `a440101`) | `t6_pytest_rojo.png`, `t6_pytest_verde.png` |
+| 16 oct | `feature/sprint2-churn-dashboard` | `tests/test_churn_dashboard.py` | Error: faltan las funciones de churn del dashboard (commit `85960c9`) | 57 passed, suite completa (commit `5d0ccf4`) | `t7_pytest_rojo.png`, `t7_pytest_verde.png` |
+
+Al cierre del Sprint 2 el proyecto tiene 57 tests automatizados en verde.
 
 El CI de GitHub Actions (`.github/workflows/tests.yml`) corre pytest en cada Pull Request. En cada PR el
 check `tests` quedó en rojo con el commit de las pruebas y en verde al final:
@@ -60,6 +69,9 @@ check `tests` quedó en rojo con el commit de las pruebas y en verde al final:
 | #3 · Delinquency | `evidencias/t2_CI_rojo.png` | `evidencias/t2_CI_verde.png` |
 | #4 · Churn | `evidencias/t3_CI_rojo.png` | `evidencias/t3_CI_verde.png` |
 
+En el Sprint 2 el check `tests` quedó en verde antes del merge en los PR #6, #7, #9 y #10 (pestaña
+*Checks* de cada PR).
+
 ## 03 · Integración continua y propiedad colectiva
 
 | PR | Rama | Autores | Revisor | Revisión | Merge |
@@ -68,11 +80,19 @@ check `tests` quedó en rojo con el commit de las pruebas y en verde al final:
 | #2 | `docs/sprint1-data-ingestion` | Daniel | Michelle | Merge por Michelle | 10 oct 21:53 |
 | #3 | `feature/sprint1-delinquency-validation` | Daniel, Maria | Michelle | Comentarios y aprobación registrados después del merge | 14 oct 11:59 |
 | #4 | `feature/sprint1-churn-validation` | Daniel, Maria | Michelle | 3 comentarios de línea + Approve **antes** del merge | 14 oct 14:18 |
+| #5 | `docs/cierre-sprint1` | Michelle | Maria | Merge por Maria | 14 oct 15:54 |
+| #6 | `feature/sprint2-delinquency-docs-validation` | Michelle, Daniel | Maria | 3 comentarios de línea + Approve antes del merge | 15 oct 21:10 |
+| #7 | `feature/sprint2-churn-docs-validation` | Michelle, Daniel | Maria | 2 comentarios de línea + Approve antes del merge | 15 oct 21:18 |
+| #8 | `docs/evidencias-sprint1` | Daniel | Maria | Merge por Maria | 16 oct 11:13 |
+| #9 | `feature/sprint2-delinquency-dashboard` | Maria, Michelle | Daniel | 2 comentarios de línea + Approve antes del merge | 16 oct 05:36 |
+| #10 | `feature/sprint2-churn-dashboard` | Maria, Michelle | Daniel | Comentarios de línea + Approve antes del merge | 16 oct 11:09 |
 
 Seguimiento en Trello: `evidencias/trello_sprint1_en_progreso.png` (Tareas 2 y 3 en curso) y
-`evidencias/trello_sprint1_done.jpg` (cierre del Sprint 1).
+`evidencias/trello_sprint1_done.jpg` (cierre del Sprint 1); `evidencias/t4_done.png`, `evidencias/t5_done.png` y
+`evidencias/modelo_delinquiency_done.png` (avance del Sprint 2).
 
-Evidencia: `evidencias/t2_PR_aprobado.jpeg`, `evidencias/t3_PR_revision.jpeg`, `evidencias/t3_PR_aprobado.png`.
+Evidencia: `evidencias/t2_PR_aprobado.jpeg`, `evidencias/t3_PR_revision.jpeg`, `evidencias/t3_PR_aprobado.png`,
+`evidencias/t4_PR_revision.png`, `evidencias/t5_PR_revision.png`, `evidencias/t6_PR_aprobado.png`, `evidencias/t7_PR_aprobado.png`.
 
 ## 04 · Simple Design y Refactorización
 
