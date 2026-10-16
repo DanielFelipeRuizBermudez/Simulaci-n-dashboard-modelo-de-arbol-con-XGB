@@ -21,7 +21,8 @@ import pandas as pd
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_DIR = os.path.join(BASE_DIR, "models")
-
+ALERT_DAYS_HIGH = 30
+ALERT_DAYS_CRITICAL = 60
 ALERT_LEVELS = ["critical", "high", "medium", "none"]  
 
 
