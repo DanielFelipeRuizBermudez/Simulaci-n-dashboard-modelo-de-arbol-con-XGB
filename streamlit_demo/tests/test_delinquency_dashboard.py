@@ -36,19 +36,15 @@ def scored():
     })
 
 
-# --- Reglas de alerta 30/60 días ---------------------------------------------------
 def test_umbrales_de_alerta_son_30_y_60_dias():
     assert (ALERT_DAYS_HIGH, ALERT_DAYS_CRITICAL) == (30, 60)
 
 
 def test_niveles_de_alerta(scored):
     levels = delinquency_alert_level(scored).tolist()
-    # A: marcado y 75 días -> crítica; B: 35 días -> alta; C: 5 días -> media;
-    # D: 80 días pero NO marcado por el modelo -> sin alerta
     assert levels == ["critical", "high", "medium", "none"]
 
 
-# --- Fórmula de priorización (score × exposición) ---------------------------------
 def test_priority_score_es_riesgo_por_exposicion(scored):
     out = add_priority(scored, "credit_exposure_cop").set_index("client_id")
     assert out.loc["B", "priority_score"] == pytest.approx(0.5 * 10_000_000)
@@ -56,13 +52,9 @@ def test_priority_score_es_riesgo_por_exposicion(scored):
 
 def test_lista_ordenada_por_prioridad(scored):
     out = prepare_delinquency_dashboard(scored, {"amount_column": "credit_exposure_cop"})
-    # B: 0.5 × 10M = 5M · A: 0.9 × 1M = 0.9M · C: 0.4 × 2M = 0.8M · D: 0.1 × 60M = 6M
-    # B supera a A aunque A tiene más riesgo, porque hay más dinero en juego.
-    # D tiene la prioridad más alta, pero el modelo no lo marcó: va al final.
     assert out["client_id"].tolist() == ["B", "A", "C", "D"]
 
 
-# --- Versión del modelo por alerta -------------------------------------------------
 def test_version_del_modelo_identifica_archivo_metrica_y_umbral():
     _, meta = load_model("delinquency")
     version = model_version("delinquency", meta)
@@ -70,7 +62,6 @@ def test_version_del_modelo_identifica_archivo_metrica_y_umbral():
     assert "F2" in version and "umbral" in version
 
 
-# --- Test de conexión modelo -> dashboard -----------------------------------------
 def test_dashboard_recibe_predicciones_del_modelo_cargado():
     model, meta = load_model("delinquency")
     clients = pd.read_csv(os.path.join(DATA_DIR, "new_clients_template.csv"))
