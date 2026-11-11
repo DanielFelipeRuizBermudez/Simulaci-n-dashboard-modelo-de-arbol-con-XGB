@@ -53,3 +53,16 @@ repartir el trabajo por tareas completas para que nadie dependiera de otra perso
 | Daniel | Revisión y merge del PR #9 (Tarea 6) a las 05:36 y del PR #10 (Tarea 7) | Bitácora XP con las evidencias del Sprint 2 | Ninguno |
 | Maria | Tarea 7 (dashboard de churn) | Cierre del Sprint 2 | La revisión del PR #9 llegó hasta el viernes en la mañana, por eso la Tarea 7 no se pudo cerrar el jueves. En el cierre, un commit se subió directo a `main` sin rama; los ajustes siguientes se hicieron en la rama `docs/ajustes-cierre-sprint2` (PR #12) |
 | Michelle | Copiloto en las Tareas 6 y 7 | Revisión de los PR de cierre (#11 y #12) | Ninguno |
+
+## Sprint 3 (11 – 15 nov)
+
+### Daily – mié 11 nov · planning e inicio del Sprint 3 (medio: grupo de WhatsApp)
+
+Sprint Planning: las tarjetas Sol call queue, End to end validation, Post deployment monitoring y
+Release v1.0 pasaron a *To do* con pareja, revisor y fecha límite.
+
+| Integrante | ¿Qué hice? | ¿Qué haré? | Impedimentos |
+|---|---|---|---|
+| Daniel | (respuesta de Daniel) | (respuesta de Daniel) | (respuesta de Daniel) |
+| Maria | (respuesta de Maria) | (respuesta de Maria) | (respuesta de Maria) |
+| Michelle | Sprint Planning 3 en Trello; P1 (Sol call queue) con Daniel: pruebas en rojo, código en verde (71 pruebas) y PR #15 abierto para Maria | Merge de P1 cuando pase el CI; copiloto de Maria en P2 | Incidente de GitHub Actions desde las 15:48: el CI del PR #15 no arrancó. Mitigación: pruebas locales en verde y revisión del código mientras tanto. La app no abría con Streamlit 1.38 (`st.segmented_control`); se subió el mínimo a 1.40 |
