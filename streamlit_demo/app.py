@@ -29,6 +29,12 @@ from dashboard_logic import (
     prepare_delinquency_dashboard,
     score_clients,
 )
+from sol_logic import (
+    ACTION_HUMAN,
+    ESCALATION_EXPOSURE_COP,
+    MAX_IDENTITY_ATTEMPTS,
+    build_call_queue,
+)
 
 BASE_DIR = os.path.dirname(__file__)
 MODEL_DIR = os.path.join(BASE_DIR, "models")
@@ -362,6 +368,38 @@ TR = {
     "col_flagged": {"en": "Flagged", "es": "Marcado"},
     "col_alert_level": {"en": "Alert (30/60 days)", "es": "Alerta (30/60 días)"},
     "col_priority": {"en": "Priority (risk × exposure)", "es": "Prioridad (riesgo × exposición)"},
+    "sol_queue_header": {"en": "### Sol's call queue", "es": "### Cola de llamadas de Sol"},
+    "sol_queue_caption": {
+        "en": "Clients flagged by the model, in the order Sol will call them (priority = risk × exposure). "
+              "Exposures above ${limit:,.0f} COP go straight to a human advisor.",
+        "es": "Clientes marcados por el modelo, en el orden en que Sol los llamará (prioridad = riesgo × exposición). "
+              "Las exposiciones mayores a ${limit:,.0f} COP pasan directo a un asesor humano.",
+    },
+    "sol_queue_empty": {"en": "No flagged clients: Sol has no calls to make.", "es": "No hay clientes marcados: Sol no tiene llamadas pendientes."},
+    "col_queue_position": {"en": "#", "es": "#"},
+    "col_exposure": {"en": "Exposure (COP)", "es": "Exposición (COP)"},
+    "col_sol_action": {"en": "Who calls", "es": "Quién llama"},
+    "action_sol": {"en": "Sol", "es": "Sol"},
+    "action_human": {"en": "Human advisor", "es": "Asesor humano"},
+    "sol_protocol_title": {"en": ":material/verified_user: Sol's call protocol", "es": ":material/verified_user: Protocolo de llamada de Sol"},
+    "sol_protocol_body": {
+        "en": (
+            "1. Sol calls in queue order and introduces itself as FinBank's assistant.\n"
+            "2. **Identity check:** before talking about the account, the client must confirm two details "
+            "(last 4 digits of their ID and birth year).\n"
+            "3. **Escalation to a human advisor** if identity fails {attempts} times, if the client asks for a person, "
+            "or if the exposure is above ${limit:,.0f} COP.\n"
+            "4. Sol offers payment agreements; it never threatens or penalizes."
+        ),
+        "es": (
+            "1. Sol llama en el orden de la cola y se presenta como asistente de FinBank.\n"
+            "2. **Verificación de identidad:** antes de hablar de la cuenta, el cliente confirma dos datos "
+            "(últimos 4 dígitos del documento y año de nacimiento).\n"
+            "3. **Escala a un asesor humano** si la verificación falla {attempts} veces, si el cliente pide hablar con una persona "
+            "o si la exposición supera ${limit:,.0f} COP.\n"
+            "4. Sol ofrece acuerdos de pago; nunca amenaza ni sanciona."
+        ),
+    },
     "alert_critical": {"en": "Critical · 60+ days late", "es": "Crítica · 60+ días de atraso"},
     "alert_high": {"en": "High · 30+ days late", "es": "Alta · 30+ días de atraso"},
     "alert_medium": {"en": "Medium · flagged", "es": "Media · marcado"},
@@ -949,6 +987,42 @@ def render_table_view(scored, meta, lang, key_fields=None):
     )
 
 
+def render_call_queue(board):
+    """Sprint 3 · P1: cola de llamadas de Sol en la pestaña de mora."""
+    st.markdown(t("sol_queue_header"))
+    st.caption(t("sol_queue_caption", limit=ESCALATION_EXPOSURE_COP))
+    queue = build_call_queue(board)
+    if queue.empty:
+        st.info(t("sol_queue_empty"))
+    else:
+        table = queue[["queue_position", "client_id", "credit_exposure_cop"]].copy()
+        table["risk_pct"] = queue["risk_score"] * 100
+        table["alert_level"] = queue["alert_level"].map(lambda code: t(f"alert_{code}"))
+        table["priority_score"] = queue["priority_score"]
+        table["sol_action"] = queue["sol_action"].map(
+            lambda a: t("action_human") if a == ACTION_HUMAN else t("action_sol")
+        )
+        st.dataframe(
+            table,
+            column_config={
+                "queue_position": st.column_config.NumberColumn(t("col_queue_position"), format="%d"),
+                "client_id": st.column_config.TextColumn(t("col_client_id")),
+                "risk_pct": st.column_config.ProgressColumn(
+                    t("col_risk_score"), format="%.1f%%", min_value=0, max_value=100,
+                ),
+                "alert_level": st.column_config.TextColumn(t("col_alert_level")),
+                "credit_exposure_cop": st.column_config.NumberColumn(t("col_exposure"), format="$%.0f"),
+                "priority_score": st.column_config.NumberColumn(t("col_priority"), format="$%.0f"),
+                "sol_action": st.column_config.TextColumn(t("col_sol_action")),
+            },
+            column_order=["queue_position", "client_id", "risk_pct", "alert_level",
+                          "credit_exposure_cop", "priority_score", "sol_action"],
+            hide_index=True, use_container_width=True, height=300,
+        )
+    with st.expander(t("sol_protocol_title"), expanded=False):
+        st.markdown(t("sol_protocol_body", attempts=MAX_IDENTITY_ATTEMPTS, limit=ESCALATION_EXPOSURE_COP))
+
+
 def render_charts_view(scored, meta):
     with st.container(border=True):
         st.caption(t("hist_caption"))
@@ -1080,6 +1154,8 @@ def render_tab(label, model_name, title):
         st.markdown(t("prioritized_list"))
         st.caption(t("model_version_caption", version=model_version(model_name, meta, MODEL_DIR), data=data_fingerprint(df)))
         render_table_view(scored, meta, lang, key_fields=CHURN_KEY_FIELDS if model_name == "churn" else None)
+        if model_name == "delinquency":
+            render_call_queue(scored)
     elif view == "charts":
         st.markdown(t("risk_distribution"))
         render_charts_view(scored, meta)
@@ -1221,6 +1297,13 @@ client ID, a number, or a variable name.
   overall (use for "what influences delinquency/churn the most").
 - get_feature_contribution: how much one specific variable contributes,
   either for one client or on average across the batch.
+- get_call_queue: your own delinquency call queue — who you will call first
+  and which cases go to a human advisor (exposure too high).
+
+Call protocol: you never discuss account details before the client confirms
+two identity details (last 4 digits of their ID and birth year), and a call
+goes to a human advisor if identity fails twice, if the client asks for a
+person, or if the exposure is too high.
 
 SHAP contribution values are relative — describe them as "pushing the risk
 score up" or "down", not as exact real-world probabilities.
@@ -1234,6 +1317,32 @@ Answer briefly and clearly, like a helpful analyst summarizing results in a
 business meeting. If a tool returns an error saying there are no
 predictions yet, tell the stakeholder (in their language) to upload a
 client file in the Delinquency or Churn tab first."""
+
+
+def get_call_queue(n: int = 10) -> list:
+    """Returns Sol's call queue for delinquency: the flagged clients in the
+    order Sol will call them (priority = risk score × credit exposure), and
+    whether Sol makes the call or a human advisor takes it because the
+    exposure is too high.
+
+    Args:
+        n: How many clients from the top of the queue to return. Use -1 to
+            return the whole queue.
+    """
+    board = st.session_state.get("scored_delinquency")
+    if board is None or len(board) == 0:
+        return [{"error": "No delinquency predictions have been run yet in this session."}]
+    queue = build_call_queue(board, top_n=None if n is None or n < 0 else n)
+    return [
+        {
+            "position": int(r.queue_position),
+            "client_id": r.client_id,
+            "risk_score_pct": round(r.risk_score * 100, 1),
+            "credit_exposure_cop": round(float(r.credit_exposure_cop)),
+            "who_calls": "human advisor" if r.sol_action == ACTION_HUMAN else "Sol",
+        }
+        for r in queue.itertuples()
+    ]
 
 
 def _get_gemini_api_key():
@@ -1309,7 +1418,7 @@ def render_sol_chat():
         client = genai.Client(api_key=api_key_input)
         config = types.GenerateContentConfig(
             system_instruction=SOL_SYSTEM_PROMPT,
-            tools=[get_kpis, get_client_list, get_shap_summary, get_feature_contribution],
+            tools=[get_kpis, get_client_list, get_shap_summary, get_feature_contribution, get_call_queue],
         )
         st.session_state["sol_client"] = client
         st.session_state["sol_chat"] = client.chats.create(model=model_choice, config=config)
