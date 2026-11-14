@@ -80,3 +80,41 @@ Regla de revisión: Cuando Daniel es piloto lo revisa Michelle, cuando Michelle 
 | 3 | vie 16 | 0 | 0 | PR #9 (05:36) y #10 (11:09) fusionados |
 
 **Lectura:** la línea real se mantuvo en 16 el primer día, bajó a 10 al fusionar las Tareas 4 y 5 el jueves por la noche y llegó a 0 el viernes con las Tareas 6 y 7. Se completó todo lo comprometido (Velocity 100 %) pero con un día de retraso, porque la Tarea 7 dependía de la 6 y su PR se fusionó hasta el viernes. Ver Retrospectiva 2.
+
+---
+
+## Sprint 3 – Despliegue y validación (plan: mié 11 – dom 15 nov)
+
+**Objetivo del Sprint:** pasar de demo a operación cerrando la fase *Deployment and validation* del
+Project Charter (semanas 9 a 12, $45M): Sol conectado a las alertas, validación de punta a punta,
+monitoreo después del despliegue y versión `v1.0` publicada.
+
+**Sprint Planning:** mié 11 nov, por el grupo de WhatsApp y el tablero de Trello. Las 4 historias pasaron
+de *Backlog* a *To do* con pareja, revisor y fecha límite. Ver `docs/evidencias/trello_sprint3_planning.png`.
+
+Regla de revisión (igual al Sprint 2): cuando Daniel es piloto lo revisa Michelle, cuando Michelle es piloto
+lo revisa Maria y cuando Maria es piloto lo revisa Daniel.
+
+| # | Historia (tarjeta de Trello) | Rama | Pareja (piloto + copiloto) | Revisor PR | Fecha límite | PR | Merge | Puntos | Estado |
+|---|---|---|---|---|---|---|---|---|---|
+| 8 | P1 · Sol call queue | `feature/t8-sol-cola-llamadas` | Michelle + Daniel | Maria | jue 12 nov | #15 | 12 nov 15:57 | 5 | Done |
+| 9 | P2 · End to end validation | `feature/t9-pruebas-e2e` | Maria + Michelle | Daniel | vie 13 nov | – | – | 3 | To do (atrasada) |
+| 10 | P3 · Post deployment monitoring | `feature/t10-monitoreo-psi` | Daniel + Maria | Michelle | sáb 14 nov | – | – | 5 | To do |
+| 11 | P4 · Release v1.0 | `docs/cierre-sprint3` | Michelle + Daniel | Maria | dom 15 nov | – | – | 3 | In progress |
+
+- Puntos comprometidos: **16** (igual a la Velocity del Sprint 2)
+- Puntos completados: se registra al cierre del Sprint
+- Velocity real: se registra al cierre del Sprint
+
+### Burndown (puntos restantes al final de cada día)
+
+![Burndown Sprint 3](../evidencias/burndown_sprint3.png)
+
+| Día | Fecha | Ideal | Real | Qué pasó |
+|---|---|---|---|---|
+| 0 | inicio | 16 | 16 | Sprint Planning 3: 4 historias, 16 puntos |
+| 1 | mié 11 | 13 | 16 | P1 terminado en rama y PR #15 abierto; el CI no arrancó por un incidente de GitHub Actions |
+| 2 | jue 12 | 10 | 11 | P1 fusionado (PR #15, 15:57), el mismo día de su fecha límite |
+| 3 | vie 13 | 6 | 11 | Sin merges: P2 no arrancó en su fecha límite |
+| 4 | sáb 14 | 3 | | |
+| 5 | dom 15 | 0 | | |
