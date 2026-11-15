@@ -17,4 +17,7 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install -r requirements.txt
-      - run: pytest -v
+      - name: Pruebas unitarias
+        run: pytest -v --ignore=tests/test_e2e.py --ignore=tests/test_app_smoke.py
+      - name: Pruebas de punta a punta
+        run: pytest -v tests/test_e2e.py tests/test_app_smoke.py
