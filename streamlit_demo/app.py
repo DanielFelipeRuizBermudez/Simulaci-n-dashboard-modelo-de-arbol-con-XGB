@@ -29,6 +29,16 @@ from dashboard_logic import (
     prepare_delinquency_dashboard,
     score_clients,
 )
+from monitoring import (
+    PSI_RED,
+    PSI_YELLOW,
+    STATUS_GREEN,
+    STATUS_RED,
+    STATUS_YELLOW,
+    drift_report,
+    needs_retraining,
+    simulate_drift,
+)
 from sol_logic import (
     ACTION_HUMAN,
     ESCALATION_EXPOSURE_COP,
@@ -41,6 +51,7 @@ MODEL_DIR = os.path.join(BASE_DIR, "models")
 DATA_DIR = os.path.join(BASE_DIR, "data")
 ASSETS_DIR = os.path.join(BASE_DIR, "assets")
 NEW_CLIENTS_TEMPLATE = os.path.join(DATA_DIR, "new_clients_template.csv")
+TRAINING_DATA = os.path.join(DATA_DIR, "historical_data.csv")
 LOGO_PATH = os.path.join(ASSETS_DIR, "logo.png")
 SOL_MARK_PATH = os.path.join(ASSETS_DIR, "sol_mark.png")
 SOL_AVATAR = SOL_MARK_PATH if os.path.exists(SOL_MARK_PATH) else ":material/wb_sunny:"
@@ -292,6 +303,7 @@ TR = {
     "status_sol_ready": {"en": "Sol ready for calls", "es": "Sol lista para llamar"},
     "tab_delinquency": {"en": "Delinquency", "es": "Morosidad"},
     "tab_churn": {"en": "Churn", "es": "Deserción"},
+    "tab_monitoring": {"en": "Monitoring", "es": "Monitoreo"},
     "tab_sol": {"en": "Ask Sol", "es": "Pregúntale a Sol"},
     "delinquency_title": {"en": "Early Delinquency Detection", "es": "Detección Temprana de Morosidad"},
     "churn_title": {"en": "Churn Risk Detection", "es": "Detección de Riesgo de Deserción"},
@@ -375,6 +387,60 @@ TR = {
         "es": "Clientes marcados por el modelo, en el orden en que Sol los llamará (prioridad = riesgo × exposición). "
               "Las exposiciones mayores a ${limit:,.0f} COP pasan directo a un asesor humano.",
     },
+    "monitoring_title": {"en": "Post-deployment monitoring", "es": "Monitoreo post-despliegue"},
+    "monitoring_intro": {
+        "en": "Compares each model variable in the current batch against the data the models were trained on, "
+              "using the Population Stability Index (PSI). Green < {yellow:.2f} (stable), "
+              "yellow {yellow:.2f}–{red:.2f} (watch), red > {red:.2f} (retrain).",
+        "es": "Compara cada variable de los modelos en el lote actual con los datos con que se entrenaron, "
+              "usando el Índice de Estabilidad Poblacional (PSI). Verde < {yellow:.2f} (estable), "
+              "amarillo {yellow:.2f}–{red:.2f} (vigilar), rojo > {red:.2f} (reentrenar).",
+    },
+    "monitoring_upload": {"en": "Upload a new client batch (CSV)", "es": "Sube un lote nuevo de clientes (CSV)"},
+    "monitoring_simulate": {"en": "Simulate a shifted batch", "es": "Simular un lote desplazado"},
+    "monitoring_simulate_help": {
+        "en": "Lower income, higher credit utilization and more days late than in training.",
+        "es": "Menos ingreso, más uso del cupo y más días de atraso que en el entrenamiento.",
+    },
+    "monitoring_source_upload": {"en": "uploaded batch", "es": "lote subido"},
+    "monitoring_source_current": {"en": "current delinquency batch", "es": "lote actual de mora"},
+    "monitoring_source_shifted": {"en": "shifted", "es": "desplazado"},
+    "monitoring_batch_caption": {
+        "en": "Batch: {source} · {n} clients · reference: {n_ref:,} training clients.",
+        "es": "Lote: {source} · {n} clientes · referencia: {n_ref:,} clientes de entrenamiento.",
+    },
+    "monitoring_small_batch": {
+        "en": "Small batch: with fewer than {min_n} clients the PSI is indicative, part of the difference is sampling noise.",
+        "es": "Lote pequeño: con menos de {min_n} clientes el PSI es orientativo, parte de la diferencia es ruido de muestreo.",
+    },
+    "monitoring_no_training": {
+        "en": "Training data not found. Run `python generate_data.py` first.",
+        "es": "No se encontraron los datos de entrenamiento. Corre `python generate_data.py` primero.",
+    },
+    "monitoring_no_columns": {
+        "en": "The batch has none of the model variables.",
+        "es": "El lote no tiene ninguna de las variables de los modelos.",
+    },
+    "monitoring_stable": {"en": "Stable", "es": "Estables"},
+    "monitoring_watch": {"en": "Watch", "es": "Vigilar"},
+    "monitoring_drift": {"en": "Retrain", "es": "Reentrenar"},
+    "monitoring_retrain": {
+        "en": "Retrain recommended: {features} drifted away from the training data. "
+              "Do not rely on the alerts until the models are retrained.",
+        "es": "Se recomienda reentrenar: {features} se alejaron de los datos de entrenamiento. "
+              "No confíes en las alertas hasta reentrenar los modelos.",
+    },
+    "monitoring_watch_msg": {
+        "en": "No variable in red. Keep watching: {features}.",
+        "es": "Ninguna variable en rojo. Vigilar: {features}.",
+    },
+    "monitoring_ok": {
+        "en": "All variables are stable: the models can keep running with this data.",
+        "es": "Todas las variables están estables: los modelos pueden seguir operando con estos datos.",
+    },
+    "col_feature": {"en": "Variable", "es": "Variable"},
+    "col_psi": {"en": "PSI", "es": "PSI"},
+    "col_status": {"en": "Status", "es": "Estado"},
     "sol_queue_empty": {"en": "No flagged clients: Sol has no calls to make.", "es": "No hay clientes marcados: Sol no tiene llamadas pendientes."},
     "col_queue_position": {"en": "#", "es": "#"},
     "col_exposure": {"en": "Exposure (COP)", "es": "Exposición (COP)"},
@@ -1023,6 +1089,122 @@ def render_call_queue(board):
         st.markdown(t("sol_protocol_body", attempts=MAX_IDENTITY_ATTEMPTS, limit=ESCALATION_EXPOSURE_COP))
 
 
+@st.cache_data(show_spinner=False)
+def load_reference_data():
+    return pd.read_csv(TRAINING_DATA)
+
+
+def monitored_features():
+    features = []
+    for name in ("delinquency", "churn"):
+        meta_path = os.path.join(MODEL_DIR, f"{name}_meta.json")
+        if os.path.exists(meta_path):
+            with open(meta_path) as f:
+                features.extend(json.load(f)["features"])
+    return list(dict.fromkeys(features))
+
+
+STATUS_COLORS = {STATUS_GREEN: BRAND_GREEN_DEEP, STATUS_YELLOW: "#F2B705", STATUS_RED: ALERT_RED}
+STATUS_EMOJI = {STATUS_GREEN: "🟢", STATUS_YELLOW: "🟡", STATUS_RED: "🔴"}
+SMALL_BATCH = 200
+
+
+def psi_chart(report, lang):
+    labels = [feature_label(f, lang) for f in report["feature"]]
+    fig = go.Figure(go.Bar(
+        x=report["psi"], y=labels, orientation="h",
+        marker_color=[STATUS_COLORS[s] for s in report["status"]],
+        text=[f"{v:.2f}" for v in report["psi"]], textposition="outside",
+    ))
+    for limit in (PSI_YELLOW, PSI_RED):
+        fig.add_vline(x=limit, line_dash="dash", line_color="#999999")
+    fig.update_layout(
+        height=40 * len(report) + 60, margin=dict(l=10, r=40, t=10, b=10),
+        yaxis=dict(autorange="reversed"), xaxis_title="PSI",
+        plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
+    )
+    return fig
+
+
+def render_monitoring_tab():
+    """Sprint 3 · P3: PSI por variable entre los datos de entrenamiento y el lote actual."""
+    st.subheader(t("monitoring_title"))
+    lang = get_lang()
+    st.caption(t("monitoring_intro", yellow=PSI_YELLOW, red=PSI_RED))
+
+    if not os.path.exists(TRAINING_DATA):
+        st.warning(t("monitoring_no_training"))
+        return
+    reference = load_reference_data()
+
+    with st.container(border=True):
+        col_up, col_sim = st.columns([2, 1])
+        with col_up:
+            uploaded = st.file_uploader(t("monitoring_upload"), type="csv", key="monitoring")
+        with col_sim:
+            shifted = st.toggle(t("monitoring_simulate"), help=t("monitoring_simulate_help"), key="monitoring_shift")
+
+    if uploaded is not None:
+        batch = pd.read_csv(uploaded)
+        source = t("monitoring_source_upload")
+    else:
+        batch = st.session_state.get("df_delinquency")
+        if batch is None and os.path.exists(NEW_CLIENTS_TEMPLATE):
+            batch = pd.read_csv(NEW_CLIENTS_TEMPLATE)
+        source = t("monitoring_source_current")
+    if batch is None or batch.empty:
+        st.info(t("no_data_loaded"))
+        return
+    if shifted:
+        batch = simulate_drift(batch)
+        source = f"{source} ({t('monitoring_source_shifted')})"
+
+    report = drift_report(reference, batch, monitored_features())
+    if report.empty:
+        st.error(t("monitoring_no_columns"))
+        return
+
+    st.caption(t("monitoring_batch_caption", source=source, n=len(batch), n_ref=len(reference)))
+    if len(batch) < SMALL_BATCH:
+        st.caption(t("monitoring_small_batch", min_n=SMALL_BATCH))
+
+    counts = report["status"].value_counts()
+    with st.container(border=True):
+        c1, c2, c3 = st.columns(3)
+        c1.metric(f"{STATUS_EMOJI[STATUS_GREEN]} {t('monitoring_stable')}", int(counts.get(STATUS_GREEN, 0)))
+        c2.metric(f"{STATUS_EMOJI[STATUS_YELLOW]} {t('monitoring_watch')}", int(counts.get(STATUS_YELLOW, 0)))
+        c3.metric(f"{STATUS_EMOJI[STATUS_RED]} {t('monitoring_drift')}", int(counts.get(STATUS_RED, 0)))
+
+    def names(status):
+        return ", ".join(feature_label(f, lang) for f in report.loc[report["status"] == status, "feature"])
+
+    if needs_retraining(report):
+        st.error(t("monitoring_retrain", features=names(STATUS_RED)), icon=":material/warning:")
+    elif (report["status"] == STATUS_YELLOW).any():
+        st.warning(t("monitoring_watch_msg", features=names(STATUS_YELLOW)), icon=":material/visibility:")
+    else:
+        st.success(t("monitoring_ok"), icon=":material/check_circle:")
+
+    col_table, col_chart = st.columns([1, 1.3])
+    with col_table:
+        table = pd.DataFrame({
+            "status": [STATUS_EMOJI[s] for s in report["status"]],
+            "feature": [feature_label(f, lang) for f in report["feature"]],
+            "psi": report["psi"],
+        })
+        st.dataframe(
+            table,
+            column_config={
+                "status": st.column_config.TextColumn(t("col_status"), width="small"),
+                "feature": st.column_config.TextColumn(t("col_feature")),
+                "psi": st.column_config.NumberColumn(t("col_psi"), format="%.3f"),
+            },
+            hide_index=True, use_container_width=True,
+        )
+    with col_chart:
+        st.plotly_chart(psi_chart(report, lang), use_container_width=True, config=PLOTLY_CONFIG)
+
+
 def render_charts_view(scored, meta):
     with st.container(border=True):
         st.caption(t("hist_caption"))
@@ -1479,9 +1661,10 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-tab1, tab2, tab3 = st.tabs([
+tab1, tab2, tab3, tab4 = st.tabs([
     f":material/trending_down: {t('tab_delinquency')}",
     f":material/person_remove: {t('tab_churn')}",
+    f":material/monitor_heart: {t('tab_monitoring')}",
     f":material/mic: {t('tab_sol')}",
 ])
 
@@ -1492,6 +1675,9 @@ with tab2:
     render_tab("churn", "churn", t("churn_title"))
 
 with tab3:
+    render_monitoring_tab()
+
+with tab4:
     render_sol_chat()
 
 st.divider()
