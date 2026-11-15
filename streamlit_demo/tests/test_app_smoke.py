@@ -19,4 +19,4 @@ def test_app_ejecutada_sin_errores():
 
 def test_app_pestañas_completas():
     at = _open_app()
-    assert len(at.tabs) == 3
+    assert len(at.tabs) == 4
