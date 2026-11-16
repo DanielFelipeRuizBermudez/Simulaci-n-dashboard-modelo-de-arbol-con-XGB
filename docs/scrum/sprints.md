@@ -80,3 +80,63 @@ Regla de revisión: Cuando Daniel es piloto lo revisa Michelle, cuando Michelle 
 | 3 | vie 16 | 0 | 0 | PR #9 (05:36) y #10 (11:09) fusionados |
 
 **Lectura:** la línea real se mantuvo en 16 el primer día, bajó a 10 al fusionar las Tareas 4 y 5 el jueves por la noche y llegó a 0 el viernes con las Tareas 6 y 7. Se completó todo lo comprometido (Velocity 100 %) pero con un día de retraso, porque la Tarea 7 dependía de la 6 y su PR se fusionó hasta el viernes. Ver Retrospectiva 2.
+
+---
+
+## Sprint 3 – Despliegue y validación (plan: mié 11 – dom 15 nov · real: mié 11 – dom 15 nov)
+
+**Objetivo del Sprint:** pasar de demo a operación cerrando la fase *Deployment and validation* del
+Project Charter (semanas 9 a 12, $45M): Sol conectado a las alertas, validación de punta a punta,
+monitoreo después del despliegue y versión `v1.0` publicada. **Cumplido**
+
+**Sprint Planning:** lun 9 nov, por Teams. Las tarjetas se ajustaron en Trello el mar 10 y pasaron a *To do* el mié 11. Ver `docs/evidencias/trello_sprint3_planning.png`.
+
+Regla de revisión (igual al Sprint 2): cuando Daniel es piloto lo revisa Michelle, cuando Michelle es piloto
+lo revisa Maria y cuando Maria es piloto lo revisa Daniel.
+
+| # | Historia (tarjeta de Trello) | Rama | Pareja (piloto + copiloto) | Revisor PR | Fecha límite | PR | Merge | Puntos | Estado |
+|---|---|---|---|---|---|---|---|---|---|
+| 8 | P1 · Sol call queue | `feature/t8-sol-cola-llamadas` | Michelle + Daniel | Maria | jue 12 nov | #15 | 12 nov 15:57 | 5 | Done |
+| 9 | P2 · End to end validation | `feature/pruebas-e2e` | Maria + Michelle | Daniel | vie 13 nov | #17 | 14 nov 23:11 | 3 | Done (1 día tarde) |
+| 10 | P3 · Post deployment monitoring | `feature/t10-monitoreo-psi` | Daniel + Maria | Michelle | sáb 14 nov | #18 | 15 nov 14:00 | 5 | Done (1 día tarde) |
+| 11 | P4 · Release v1.0 | `docs/cierre-sprint3` | Michelle + Daniel | Maria | dom 15 nov | #16 | 15 nov | 3 | Done |
+
+- Puntos comprometidos: **16** (igual a la Velocity del Sprint 2)
+- Puntos completados: **16**
+- Velocity real: **16 puntos (100 % de lo comprometido)**, en los 5 días planeados; P2 y P3 se fusionaron un día después de su fecha límite.
+- Velocity promedio del proyecto: (10 + 16 + 16) / 3 = **14 puntos por Sprint**.
+- Resultado técnico: **93 pruebas automatizadas** en verde (84 unitarias + 9 de punta a punta y de humo de la app), en dos pasos del CI.
+- Versión publicada: `v1.0` en el dashboard público (ver README).
+
+### Burndown (puntos restantes al final de cada día)
+
+![Burndown Sprint 3](../evidencias/burndown_sprint3.png)
+
+| Día | Fecha | Ideal | Real | Qué pasó |
+|---|---|---|---|---|
+| 0 | inicio | 16 | 16 | Sprint Planning 3: 4 historias, 16 puntos |
+| 1 | mié 11 | 13 | 16 | P1 terminado en rama y PR #15 abierto; el CI no arrancó por un incidente de GitHub Actions |
+| 2 | jue 12 | 10 | 11 | P1 fusionado (PR #15, 15:57), el mismo día de su fecha límite |
+| 3 | vie 13 | 6 | 11 | Sin merges: P2 no arrancó en su fecha límite |
+| 4 | sáb 14 | 3 | 8 | P2 fusionado (PR #17, 23:11), un día después de su fecha límite; PR #18 de P3 abierto a las 23:47
+| 5 | dom 15 | 0 | 0 | P3 fusionado (PR #18, 14:00) y P4 fusionado (PR #16): release `v1.0` |
+
+**Lectura:** el Sprint empezó un día tarde (la planning fue el miércoles y no hubo avance ese día) y el
+viernes no hubo merges, así que desde el jueves la línea real quedó por encima de la ideal. El sábado y el
+domingo se recuperó: P2 y P3 se fusionaron con un día de retraso y el Sprint cerró con los 16 puntos.
+Mismo patrón del Sprint 1: trabajo concentrado al final. Ver Retrospectiva 3.
+
+### Sprint Review – dom 15 nov
+
+Asistentes: Michelle, Daniel, Maria. Medio: grupo de WhatsApp (sin reunión). Cada integrante revisó
+las historias en el dashboard publicado y en GitHub, y confirmó su aceptación en el grupo.
+
+| Historia | Qué se revisó | ¿Aceptada? |
+|---|---|---|
+| P1 · Sol call queue | Cola de llamadas en la pestaña Morosidad, protocolo de Sol y escalamiento a asesor humano | Sí |
+| P2 · End to end validation | CI con dos pasos: 84 pruebas unitarias + 9 de punta a punta y de humo de la app | Sí |
+| P3 · Post deployment monitoring | Pestaña Monitoreo: semáforo PSI por variable y lote desplazado en rojo | Sí |
+| P4 · Release v1.0 | README con enlace público y manual de uso, CHANGELOG y etiqueta `v1.0` | Sí, sujeta al merge del PR #16 y la etiqueta `v1.0` |
+
+Reuniones del Sprint 3: Sprint Planning el lun 9 (Teams). El resto de la coordinación (dailies, Review y Retrospectiva) fue por WhatsApp.
+
