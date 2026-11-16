@@ -34,3 +34,24 @@ Duración: 10–15 minutos al cierre de cada Sprint. Participan: todos. Se docum
 3. El modelo de mora marca al 85 % de los clientes y el F1 del churn es 0,296: revisar el umbral con el equipo de cobranza antes de llevar los modelos a producción.
 4. Subir las evidencias (capturas, pairing, Trello) junto con el commit de cada tarea.
 5. Registrar el Burndown cada noche (acción pendiente desde la Retrospectiva 1).
+
+## Retrospectiva Sprint 3 – dom 15 nov
+
+
+**Datos del Sprint:** 16 de 16 puntos (Velocity 100 %). P1 a tiempo; P2 y P3 un día después de su fecha
+límite. 93 pruebas automatizadas. Impedimentos: incidente de GitHub Actions el mié 11 (el CI del PR #15 no
+arrancó), la app no abría con Streamlit 1.38 y el Sprint arrancó un día tarde.
+
+| Start (empezar a hacer) | Stop (dejar de hacer) | Continue (seguir haciendo) |
+|---|---|---|
+| Avisar en el grupo apenas una tarea no va a cumplir su fecha: la P2 llegó un día tarde y se supo hasta la noche del sábado | Subir los PR a última hora de la noche: el #17 (P2) se abrió cerca de las 11 p. m. y el #18 (P3) a las 11:47 p. m. del sábado | Escribir las pruebas antes que el código: el Sprint cerró con 93 pruebas (14 de la P1, 9 de la P2 y 13 de la P3) |
+| Arrancar cada tarea un día antes de su fecha límite, sobre todo si otra depende de ella | Dejar las dailies y el Burndown para el final: es la tercera retro en que queda pendiente | Aprobar el PR antes del merge: el #15, el #17 y el #18 tuvieron revisión y no hubo commits directos a `main` |
+| Reportar la daily en el grupo antes de las 9 p. m. del mismo día, para que Michelle la registre esa noche | Encadenar las tareas sin margen: la P2 atrasó la P3 y la P3 atrasó la Release | Separar en el CI las pruebas unitarias de las de punta a punta, para ver rápido qué se rompió |
+| | | Revisar en menos de 24 h: el #18 se abrió el sábado a las 11:47 p. m. y se fusionó el domingo a las 2:00 p. m. |
+
+**Lecciones aprendidas:**
+
+1. En un Sprint con tareas encadenadas, el atraso de una se pasa a todas las siguientes.
+2. La acción de registrar el Burndown cada noche no se ha cumplido en tres Sprints, aunque tiene responsable desde el Sprint 1: depende de que todo el equipo reporte a tiempo, por eso se fija una hora límite diaria.
+3. La regla de "revisar antes del merge" del Sprint 2 sí se cumplió en todos los PR del Sprint 3.
+

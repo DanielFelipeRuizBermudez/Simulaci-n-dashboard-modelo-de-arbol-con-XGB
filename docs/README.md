@@ -1,4 +1,4 @@
-# Documentación del Corte 2 – FinTech Solutions × FinBank
+# Documentación de los Cortes 2 y 3 – FinTech Solutions × FinBank
 
 | Carpeta | Contenido |
 |---|---|
