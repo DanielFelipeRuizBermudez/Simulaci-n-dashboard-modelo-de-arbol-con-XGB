@@ -118,7 +118,7 @@ lo revisa Maria y cuando Maria es piloto lo revisa Daniel.
 | 1 | mié 11 | 13 | 16 | P1 terminado en rama y PR #15 abierto; el CI no arrancó por un incidente de GitHub Actions |
 | 2 | jue 12 | 10 | 11 | P1 fusionado (PR #15, 15:57), el mismo día de su fecha límite |
 | 3 | vie 13 | 6 | 11 | Sin merges: P2 no arrancó en su fecha límite |
-| 4 | sáb 14 | 3 | 8 | P2 fusionado (PR #17, 23:11), un día después de su fecha límite; PR #18 de P3 abierto a las 23:54 |
+| 4 | sáb 14 | 3 | 8 | P2 fusionado (PR #17, 23:11), un día después de su fecha límite; PR #18 de P3 abierto a las 23:47
 | 5 | dom 15 | 0 | 0 | P3 fusionado (PR #18, 14:00) y P4 fusionado (PR #16): release `v1.0` |
 
 **Lectura:** el Sprint empezó un día tarde (la planning fue el miércoles y no hubo avance ese día) y el
@@ -128,13 +128,15 @@ Mismo patrón del Sprint 1: trabajo concentrado al final. Ver Retrospectiva 3.
 
 ### Sprint Review – dom 15 nov
 
-Asistentes: Michelle, Daniel, Maria. Medio: (llamada / presencial). Duración: (min).
+Asistentes: Michelle, Daniel, Maria. Medio: grupo de WhatsApp (sin reunión). Cada integrante revisó
+las historias en el dashboard publicado y en GitHub, y confirmó su aceptación en el grupo.
 
-| Historia | Qué se mostró en el dashboard publicado | ¿Aceptada? |
+| Historia | Qué se revisó | ¿Aceptada? |
 |---|---|---|
-| P1 · Sol call queue | Cola de llamadas en la pestaña Morosidad, protocolo de Sol y escalamiento a asesor humano | (Sí / No) |
-| P2 · End to end validation | CI con dos pasos: 84 pruebas unitarias + 9 de punta a punta y de humo de la app | (Sí / No) |
-| P3 · Post deployment monitoring | Pestaña Monitoreo: semáforo PSI por variable y lote desplazado en rojo | (Sí / No) |
-| P4 · Release v1.0 | README con enlace público y manual de uso, CHANGELOG y etiqueta `v1.0` | (Sí / No) |
+| P1 · Sol call queue | Cola de llamadas en la pestaña Morosidad, protocolo de Sol y escalamiento a asesor humano | Sí |
+| P2 · End to end validation | CI con dos pasos: 84 pruebas unitarias + 9 de punta a punta y de humo de la app | Sí |
+| P3 · Post deployment monitoring | Pestaña Monitoreo: semáforo PSI por variable y lote desplazado en rojo | Sí |
+| P4 · Release v1.0 | README con enlace público y manual de uso, CHANGELOG y etiqueta `v1.0` | Sí, sujeta al merge del PR #16 y la etiqueta `v1.0` |
 
-Comentarios del equipo: (anotar lo que se dijo en la Review).
+Reuniones del Sprint 3: Sprint Planning el lun 9 (Teams). El resto de la coordinación (dailies, Review y Retrospectiva) fue por WhatsApp.
+
