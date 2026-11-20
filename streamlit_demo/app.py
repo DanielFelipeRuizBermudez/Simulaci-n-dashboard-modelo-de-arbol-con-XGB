@@ -1289,6 +1289,7 @@ def render_tab(label, model_name, title):
             reset_clicked = bcol2.button(t("reset_sample"), key=f"reset_{model_name}", use_container_width=True)
 
     df_key = f"df_{model_name}"
+    last_upload_key = f"last_upload_{model_name}"
     if df_key not in st.session_state:
         st.session_state[df_key] = (
             pd.read_csv(NEW_CLIENTS_TEMPLATE) if os.path.exists(NEW_CLIENTS_TEMPLATE) else None
