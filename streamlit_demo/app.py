@@ -1577,7 +1577,7 @@ def render_sol_chat():
                 t("sol_key_input_label"), value="", type="password",
                 help=t("sol_key_help"),
             ).strip()
-        model_ids = ["gemini-flash-latest", "gemini-3.6-flash"]
+        model_ids = ["gemini-3.7-flash", "gemini-3.6-flash"]
         model_labels = [t("sol_model_fast"), t("sol_model_standard")]
         model_idx = st.selectbox(
             t("sol_model_label"), range(len(model_ids)),
